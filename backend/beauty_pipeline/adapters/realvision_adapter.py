@@ -56,7 +56,7 @@ class RealVisionAdapter:
         logger.info("RealVisXL 模型加载完成")
 
     @staticmethod
-    def _resize_keep_ratio(image: Image.Image, target_size: int = 1536):
+    def _resize_keep_ratio(image: Image.Image, target_size: int = 2048):
         """保持比例缩放，用黑边填充到正方形。"""
         w, h = image.size
         scale = target_size / max(w, h)
@@ -105,7 +105,10 @@ class RealVisionAdapter:
         # 加载并预处理图片
         init_image = load_image(image_path)
         orig_w, orig_h = init_image.size
-        init_image, (ox, oy, nw, nh) = self._resize_keep_ratio(init_image, 1536)
+        # 根据原图大小选择目标分辨率，最小 1536，最大 2048
+        max_dim = max(orig_w, orig_h)
+        target_size = min(2048, max(1536, max_dim))
+        init_image, (ox, oy, nw, nh) = self._resize_keep_ratio(init_image, target_size)
 
         # 设置随机种子
         generator = None

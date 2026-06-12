@@ -4,9 +4,9 @@ Beauty Pipeline 示例脚本（本地模型加载，不通过 API）
 
 用法:
     conda activate qwen3vl
-    cd /apps/users/xzl
+    cd /apps/users/xzl/aesthetic
     python beauty_pipeline/examples/run_pipeline.py \
-        --image_path ./aesthetic/predict_app/test_images/1.png \
+        --image_path ./scut/predict_app/test_images/1.png \
         --user_requirement "我想让皮肤更紧致，改善法令纹"
 
 输出:
@@ -46,7 +46,7 @@ def main():
     # SCUT
     parser.add_argument(
         "--scut_model_path", type=str,
-        default="/apps/users/xzl/aesthetic/SCUT-Training/"
+        default="/apps/users/xzl/aesthetic/scut/SCUT-Training/"
                 "SCUT-FBP5500-Database-Release/trained_models_for_pytorch/"
                 "checkpoints/resnet18_best.pth",
         help="SCUT 模型权重路径"

@@ -29,10 +29,16 @@ def load_image(path: str) -> Image.Image:
     return Image.open(path).convert("RGB")
 
 
-def save_image(image: Image.Image, path: str) -> str:
-    """保存图片到指定路径"""
+def save_image(image: Image.Image, path: str, quality: int = 95) -> str:
+    """保存图片到指定路径，自动根据扩展名选择格式和质量"""
     ensure_dir(os.path.dirname(path) or ".")
-    image.save(path)
+    ext = Path(path).suffix.lower()
+    if ext in (".jpg", ".jpeg"):
+        image.save(path, quality=quality, subsampling=0)
+    elif ext == ".webp":
+        image.save(path, quality=quality)
+    else:
+        image.save(path)
     return path
 
 

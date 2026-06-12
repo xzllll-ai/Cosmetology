@@ -6,7 +6,7 @@ FastAPI 后端服务，封装 BeautyPipeline 为 REST API。
 
 启动方式:
     conda activate qwen3vl
-    cd /apps/users/xzl
+    cd /apps/users/xzl/aesthetic
     python -m beauty_pipeline.api_server
 """
 from __future__ import annotations
@@ -28,12 +28,12 @@ from beauty_pipeline.pipeline import BeautyPipeline
 # ============ 配置 ============
 HOST = "0.0.0.0"
 PORT = 8000
-UPLOAD_DIR = "/apps/users/xzl/beauty_pipeline/uploads"
-OUTPUT_BASE = "/apps/users/xzl/beauty_pipeline/task_outputs"
+UPLOAD_DIR = "/apps/users/xzl/aesthetic/beauty_pipeline/uploads"
+OUTPUT_BASE = "/apps/users/xzl/aesthetic/beauty_pipeline/task_outputs"
 ALLOWED_ORIGINS = [
     "http://localhost:3000",
     "http://localhost:3001",
-    # 部署后在此添加 Vercel 域名
+    "https://cosmetology-nine.vercel.app",
 ]
 
 app = FastAPI(title="Beauty Pipeline API", version="1.0.0")
@@ -88,8 +88,8 @@ def _serialize_result(result, task_id: str) -> dict:
             "full_text": result.advice.full_text,
         },
         "summary": result.summary,
-        "original_image_url": f"/static/{task_id}/original.jpg",
-        "generated_image_url": f"/static/{task_id}/generated.jpg",
+        "original_image_url": f"/static/{task_id}/original.png",
+        "generated_image_url": f"/static/{task_id}/generated.png",
     }
 
 
@@ -109,6 +109,10 @@ def _run_pipeline_task(
         task_output = os.path.join(output_dir, "pipeline_output")
         os.makedirs(task_output, exist_ok=True)
 
+        # 进度回调：更新 tasks 字典中的 progress
+        def on_progress(step: int, total: int, msg: str):
+            tasks[task_id]["progress"] = f"Step {step}/{total}: {msg}"
+
         # 修改 pipeline 的 output_dir
         with pipeline_lock:
             pipeline = get_pipeline()
@@ -119,18 +123,19 @@ def _run_pipeline_task(
                 result = pipeline.run(
                     image_path=image_path,
                     user_requirement=user_requirement,
+                    on_progress=on_progress,
                 )
             finally:
                 pipeline.config.output_dir = original_output_dir
 
         # 复制结果到任务目录
         shutil.copy2(
-            os.path.join(task_output, "original.jpg"),
-            os.path.join(output_dir, "original.jpg"),
+            os.path.join(task_output, "original.png"),
+            os.path.join(output_dir, "original.png"),
         )
         shutil.copy2(
-            os.path.join(task_output, "generated.jpg"),
-            os.path.join(output_dir, "generated.jpg"),
+            os.path.join(task_output, "generated.png"),
+            os.path.join(output_dir, "generated.png"),
         )
         # 复制 result.json 和 report.md
         for fname in ("result.json", "report.md"):

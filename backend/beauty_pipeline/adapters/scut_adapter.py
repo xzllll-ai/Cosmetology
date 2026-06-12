@@ -21,8 +21,8 @@ logger = setup_logger(__name__)
 # 将 SCUT 模型目录加入 path（复用已有 Nets.py）
 _SCUT_PYTORCH_DIR = os.path.join(
     os.path.dirname(__file__),
-    "..", "..",
-    "aesthetic", "SCUT-Training",
+    "..", "..", "..",
+    "scut", "SCUT-Training",
     "SCUT-FBP5500-Database-Release",
     "trained_models_for_pytorch",
 )

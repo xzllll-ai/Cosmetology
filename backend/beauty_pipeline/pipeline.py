@@ -72,6 +72,7 @@ class BeautyPipeline:
         self,
         image_path: str,
         user_requirement: str | None = None,
+        on_progress: "callable | None" = None,
     ) -> BeautyPipelineResult:
         """
         执行完整流水线。
@@ -79,6 +80,7 @@ class BeautyPipeline:
         Args:
             image_path: 用户原始照片路径
             user_requirement: 用户美容需求（可选）
+            on_progress: 进度回调函数，签名 on_progress(step: int, total: int, msg: str)
 
         Returns:
             BeautyPipelineResult 完整结果
@@ -86,10 +88,15 @@ class BeautyPipeline:
         total_steps = 5
         start_time = time.time()
 
+        def _report(step: int, msg: str):
+            step_log(self.logger, step, total_steps, msg)
+            if on_progress:
+                on_progress(step, total_steps, msg)
+
         # 准备输出目录
         output_dir = ensure_dir(self.config.output_dir)
-        original_copy = os.path.join(output_dir, "original.jpg")
-        generated_path = os.path.join(output_dir, "generated.jpg")
+        original_copy = os.path.join(output_dir, "original.png")
+        generated_path = os.path.join(output_dir, "generated.png")
 
         # 复制原图到输出目录
         shutil.copy2(image_path, original_copy)
@@ -97,12 +104,12 @@ class BeautyPipeline:
         self.logger.info("=" * 60)
 
         # ── Step 1: SCUT 初始评分 ──
-        step_log(self.logger, 1, total_steps, "SCUT 初始评分...")
+        _report(1, "SCUT 颜值评分中...")
         original_score = self.scorer.score(image_path)
         self.logger.info("  → 原始评分: %.4f (%s)", original_score.score, original_score.level)
 
         # ── Step 2: Qwen 医学美学分析 ──
-        step_log(self.logger, 2, total_steps, "Qwen 医学美学分析...")
+        _report(2, "Qwen 医学美学分析...")
         advice = self.advisor.analyze(
             image_path=image_path,
             score=original_score,
@@ -111,7 +118,7 @@ class BeautyPipeline:
         self.logger.info("  → 分析完成")
 
         # ── Step 3: RealVision 生成效果图 ──
-        step_log(self.logger, 3, total_steps, "RealVision 生成美容效果图...")
+        _report(3, "RealVision 生成美容效果图...")
         generated = self.generator.generate(
             image_path=image_path,
             user_requirement=user_requirement or "自然美容改善",
@@ -121,14 +128,14 @@ class BeautyPipeline:
         self.logger.info("  → 效果图已生成: %s", generated.generated_image_path)
 
         # ── Step 4: SCUT 复评 ──
-        step_log(self.logger, 4, total_steps, "SCUT 对效果图进行复评...")
+        _report(4, "SCUT 效果图复评中...")
         generated_score = self.scorer.score(generated.generated_image_path)
         score_diff = generated_score.score - original_score.score
         self.logger.info("  → 生成后评分: %.4f (%s), 变化: %+.4f",
                          generated_score.score, generated_score.level, score_diff)
 
         # ── Step 5: Qwen 总结 ──
-        step_log(self.logger, 5, total_steps, "Qwen 生成前后变化总结...")
+        _report(5, "Qwen 生成变化总结...")
         summary = self.summarizer.summarize(
             original_score=original_score,
             generated_score=generated_score,
