@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pth
+*.safetensors
+*.egg-info/
+dist/
+build/
+uploads/
+task_outputs/
+outputs/
+.env
+*.log
+
+# Node
+node_modules/
+.next/
+out/
+.env.local
+.env.production
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Models (too large for git)
+models/
+checkpoints/
+*.bin
