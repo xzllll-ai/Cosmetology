@@ -6,31 +6,25 @@ interface Props {
 }
 
 const STEPS = [
-  { label: "颜值评分", icon: "📊" },
-  { label: "美学分析", icon: "🔍" },
-  { label: "效果图生成", icon: "🎨" },
-  { label: "效果复评", icon: "📈" },
+  { label: "Qwen 评分+分析", icon: "🔍" },
+  { label: "AI 效果图生成", icon: "🎨" },
   { label: "变化总结", icon: "📝" },
 ];
 
 function getStepIndex(progress: string, status: string): number {
   // 任务完成 → 所有步骤完成
-  if (status === "completed") return 5;
+  if (status === "completed") return 3;
 
-  // 优先按 "X/5" 编号精确匹配（避免关键词冲突）
-  if (progress.includes("1/5")) return 0;
-  if (progress.includes("2/5")) return 1;
-  if (progress.includes("3/5")) return 2;
-  if (progress.includes("4/5")) return 3;
-  if (progress.includes("5/5")) return 4;
+  // 优先按 "X/3" 编号精确匹配
+  if (progress.includes("1/3")) return 0;
+  if (progress.includes("2/3")) return 1;
+  if (progress.includes("3/3")) return 2;
 
-  // 降级：按关键词匹配（仅在没有 X/5 编号时）
-  if (progress.includes("评分中")) return 0;
-  if (progress.includes("美学分析") || progress.includes("医学美学")) return 1;
-  if (progress.includes("效果图生成") || progress.includes("RealVision")) return 2;
-  if (progress.includes("复评")) return 3;
-  if (progress.includes("变化总结") || progress.includes("Qwen 生成")) return 4;
-  if (progress.includes("完成")) return 5;
+  // 降级：按关键词匹配
+  if (progress.includes("评分") || progress.includes("分析中")) return 0;
+  if (progress.includes("效果图生成") || progress.includes("RealVision") || progress.includes("Qwen 分析驱动")) return 1;
+  if (progress.includes("变化总结") || progress.includes("Qwen 生成")) return 2;
+  if (progress.includes("完成")) return 3;
 
   return -1;
 }
@@ -50,7 +44,7 @@ export default function ProgressTracker({ progress, status }: Props) {
           ? "所有步骤已完成，正在跳转..."
           : isFailed
           ? "分析过程中出现错误"
-          : "分析过程约需 3-5 分钟，请耐心等待"}
+          : "分析过程约需 2-4 分钟，请耐心等待"}
       </p>
 
       <div className="space-y-4">

@@ -2,17 +2,16 @@
 Qwen 提示词模板
 
 集中管理所有发送给 Qwen 模型的提示词，方便调优和维护。
-包含：首次分析 prompt、最终总结 prompt。
+包含：首次评分+分析 prompt、最终总结 prompt。
 """
 
 
-def build_analysis_prompt(score: float, level: str, user_requirement: str | None = None) -> str:
+def build_scoring_analysis_prompt(user_requirement: str | None = None) -> str:
     """
-    构建首次医学美学分析的提示词。
+    构建评分+医学美学分析的提示词。
+    Qwen 同时完成评分和分析，取代原来的 SCUT 评分。
 
     Args:
-        score: SCUT 初始评分
-        level: 评分等级
         user_requirement: 用户美容需求（可选）
 
     Returns:
@@ -27,14 +26,28 @@ def build_analysis_prompt(score: float, level: str, user_requirement: str | None
 请在分析中特别关注与用户需求相关的方面。"""
 
     return f"""你是一位专业的医学美容顾问，具有丰富的皮肤科和整形外科知识。
-请根据以下信息，对这张人脸照片进行专业的医学美学分析。
+请对这张人脸照片进行专业的美学评分和医学分析。
 
-## 已知信息
-- SCUT 颜值评分系统评分：{score:.2f} / 5.00
-- 评分等级：{level}
+## 任务说明
+请同时完成以下两项任务：
+
+### 任务 A：面部美学评分
+请根据面部比例对称性、皮肤状态、轮廓清晰度、五官协调性等维度，
+给出一个 **1.0 - 5.0 的评分**（保留两位小数），并给出等级：
+- 4.0 - 5.0：很高
+- 3.5 - 4.0：较高
+- 3.0 - 3.5：中等
+- 2.5 - 3.0：一般
+- 1.0 - 2.5：偏低
+
+### 任务 B：医学美学分析
 {requirement_block}
 
-## 请按以下格式输出分析结果
+## 请严格按以下格式输出
+
+### 评分
+评分: [分数] / 5.00
+等级: [等级]
 
 ### 1. 当前优点
 （列出 2-4 个面部优点，如五官比例、肤质、轮廓等）
@@ -57,53 +70,49 @@ def build_analysis_prompt(score: float, level: str, user_requirement: str | None
 - 避免过度医疗化表达
 - 不要推荐任何手术类项目
 - 所有建议仅供参考，不构成医疗建议
-- 措辞温和、专业、客观"""
+- 措辞温和、专业、客观
+- **评分和分析必须基于图片中的实际面部特征，不要凭空给分**"""
 
 
 def build_summary_prompt(
-    original_score: float,
-    original_level: str,
-    generated_score: float,
-    generated_level: str,
-    score_diff: float,
+    score: float,
+    level: str,
     user_requirement: str,
     advice_summary: str = "",
 ) -> str:
     """
-    构建最终变化总结的提示词。
+    构建最终变化总结的提示词（不含前后评分对比）。
 
     Args:
-        original_score: 原图评分
-        original_level: 原图等级
-        generated_score: 效果图评分
-        generated_level: 效果图等级
-        score_diff: 分数变化
+        score: Qwen 原始评分
+        level: 原始等级
         user_requirement: 用户需求
-        advice_summary: 之前的分析建议摘要（可选）
+        advice_summary: 分析建议摘要
 
     Returns:
         完整提示词字符串
     """
-    return f"""你是一位专业的医学美容顾问。请根据以下信息，总结用户美容前后的变化。
+    return f"""你是一位专业的医学美容顾问。请根据以下信息，总结本次美容分析的结果。
 
-## 评分数据
-- 原始评分：{original_score:.2f} / 5.00（等级：{original_level}）
-- 生成后评分：{generated_score:.2f} / 5.00（等级：{generated_level}）
-- 分数变化：{score_diff:+.2f}
+## 原始评分
+- 评分：{score:.2f} / 5.00（等级：{level}）
 
 ## 用户需求
 {user_requirement}
 
+## 分析建议摘要
+{advice_summary}
+
 ## 请按以下格式输出总结报告
 
-### 1. 评分变化总结
-（对比原始评分和生成后评分，说明分数变化的意义）
+### 1. 面部特征总结
+（总结当前面部特征，说明评分依据）
 
-### 2. 视觉变化分析
-（从医学美学角度分析生成图相较于原图可能的改善方向）
+### 2. 改善方向
+（概括主要的可改善方面和建议）
 
 ### 3. 是否符合用户需求
-（评估生成效果是否满足用户的美容需求）
+（评估分析结果是否满足用户的美容需求）
 
 ### 4. 后续建议
 （给出进一步的医学美容建议和注意事项）

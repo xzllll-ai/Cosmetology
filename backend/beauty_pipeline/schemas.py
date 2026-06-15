@@ -18,7 +18,7 @@ class BeautyInput:
 
 @dataclass
 class BeautyScore:
-    """SCUT 评分结果"""
+    """Qwen 评分结果"""
     score: float
     level: str
     raw_result: dict = field(default_factory=dict)
@@ -49,7 +49,6 @@ class BeautyPipelineResult:
     original_image_path: str = ""
     generated_image_path: str = ""
     original_score: BeautyScore | None = None
-    generated_score: BeautyScore | None = None
     advice: BeautyAdvice | None = None
     summary: str = ""
     user_requirement: str = ""

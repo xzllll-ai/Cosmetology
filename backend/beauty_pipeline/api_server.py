@@ -72,13 +72,6 @@ def _serialize_result(result, task_id: str) -> dict:
             "score": result.original_score.score,
             "level": result.original_score.level,
         },
-        "generated_score": {
-            "score": result.generated_score.score,
-            "level": result.generated_score.level,
-        },
-        "score_diff": round(
-            result.generated_score.score - result.original_score.score, 4
-        ),
         "user_requirement": result.user_requirement,
         "advice": {
             "strengths": result.advice.strengths,
@@ -103,7 +96,7 @@ def _run_pipeline_task(
     global pipeline_instance
     try:
         tasks[task_id]["status"] = "processing"
-        tasks[task_id]["progress"] = "Step 1/5: SCUT 颜值评分中..."
+        tasks[task_id]["progress"] = "Step 1/3: Qwen 评分与医学美学分析中..."
 
         # 为每个任务创建独立的输出目录
         task_output = os.path.join(output_dir, "pipeline_output")

@@ -13,8 +13,6 @@ export interface Advice {
 
 export interface AnalysisResult {
   original_score: ScoreResult;
-  generated_score: ScoreResult;
-  score_diff: number;
   user_requirement: string;
   advice: Advice;
   summary: string;

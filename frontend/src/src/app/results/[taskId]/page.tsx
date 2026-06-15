@@ -93,30 +93,13 @@ export default function ResultsPage() {
         <h2 className="text-2xl font-bold text-gray-800">分析完成</h2>
       </div>
 
-      {/* 评分对比 */}
+      {/* Qwen 美学评分 */}
       <div className="bg-white rounded-2xl shadow-lg p-8">
         <h3 className="text-lg font-bold text-gray-800 mb-6 text-center">
-          📊 评分对比
+          📊 美学评分
         </h3>
-        <div className="flex items-center justify-center gap-8 md:gap-16 flex-wrap">
-          <ScoreDisplay label="原始照片" score={result.original_score} />
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-3xl">→</span>
-            <span
-              className={`text-lg font-bold ${
-                result.score_diff > 0
-                  ? "text-green-600"
-                  : result.score_diff < 0
-                  ? "text-red-600"
-                  : "text-gray-600"
-              }`}
-            >
-              {result.score_diff > 0 ? "+" : ""}
-              {result.score_diff.toFixed(2)}
-            </span>
-            <span className="text-xs text-gray-400">变化</span>
-          </div>
-          <ScoreDisplay label="AI 效果图" score={result.generated_score} />
+        <div className="flex items-center justify-center gap-8">
+          <ScoreDisplay label="Qwen 美学评分" score={result.original_score} />
         </div>
       </div>
 

@@ -2,50 +2,35 @@
 Diffusion 模型提示词模板
 
 集中管理 RealVision 扩散模型的正向/负向提示词。
-综合用户需求和医学美学建议，生成自然真实的美容效果图。
+将 Qwen 的完整医学美学分析作为 prompt 输入，帮助 RealVision 生成更精准的效果图。
 """
 
 
-def build_diffusion_prompt(
+def build_diffusion_prompt_from_analysis(
     user_requirement: str,
-    medical_suggestions: list[str] | None = None,
+    analysis_full_text: str,
 ) -> tuple[str, str]:
     """
-    构建扩散模型的正向和负向提示词。
+    根据 Qwen 的完整分析文本构建扩散模型的正向和负向提示词。
 
     Args:
         user_requirement: 用户美容需求
-        medical_suggestions: Qwen 给出的医学美学建议列表
+        analysis_full_text: Qwen 分析的完整文本（包含优点、不足、建议等）
 
     Returns:
         (positive_prompt, negative_prompt) 元组
     """
-    # 基础正向提示词 —— 强调自然、真实、身份保持
-    base_positive = (
-        "natural realistic medical aesthetic enhancement, "
-        "professional portrait photography, "
-        "preserve facial identity and structure, "
-        "subtle natural skin improvement, "
-        "realistic skin texture, "
-        "natural lighting, high quality, detailed"
+    # 从分析文本中提取关键信息
+    suggestions = _extract_suggestions_for_diffusion(analysis_full_text)
+
+    positive_prompt = (
+        f"natural realistic medical aesthetic enhancement, "
+        f"professional portrait photography, "
+        f"preserve facial identity and structure, "
+        f"realistic skin texture, natural lighting, high quality, detailed, "
+        f"beautified version based on professional analysis: {suggestions}"
     )
 
-    # 根据用户需求添加具体方向
-    requirement_keywords = _map_requirement_to_keywords(user_requirement)
-
-    # 根据医学建议添加关键词
-    suggestion_keywords = _map_suggestions_to_keywords(medical_suggestions or [])
-
-    # 组合正向提示词
-    parts = [base_positive]
-    if requirement_keywords:
-        parts.append(requirement_keywords)
-    if suggestion_keywords:
-        parts.append(suggestion_keywords)
-
-    positive_prompt = ", ".join(parts)
-
-    # 负向提示词 —— 避免不自然的效果
     negative_prompt = (
         "over-smoothed skin, plastic face, unrealistic beauty filter, "
         "changed identity, distorted face, bad anatomy, "
@@ -59,55 +44,53 @@ def build_diffusion_prompt(
     return positive_prompt, negative_prompt
 
 
-def _map_requirement_to_keywords(requirement: str) -> str:
-    """将用户需求映射为扩散模型关键词"""
-    keyword_map = {
-        "紧致": "skin tightening, firm skin, lifted facial contour",
-        "法令纹": "reduced nasolabial folds, smooth skin around mouth",
-        "轮廓": "defined facial contour, sharp jawline, v-shaped face",
-        "白净": "bright even skin tone, fair complexion, radiant skin",
-        "细腻": "refined skin texture, smooth pores, delicate skin",
-        "美白": "brightened skin tone, reduced pigmentation, luminous skin",
-        "祛痘": "clear skin, reduced blemishes, even skin texture",
-        "抗衰": "youthful appearance, anti-aging, reduced fine lines",
-        "皱纹": "reduced wrinkles, smooth forehead, youthful skin",
-        "眼袋": "reduced eye bags, fresh under-eye area",
-        "黑眼圈": "reduced dark circles, bright eye area",
-        "毛孔": "minimized pores, refined skin texture",
-        "瘦脸": "slim face, defined jawline, v-line face",
-        "丰唇": "natural fuller lips, defined lip contour",
-        "隆鼻": "refined nose contour, balanced nose shape",
-    }
+def _extract_suggestions_for_diffusion(analysis_text: str) -> str:
+    """
+    从 Qwen 分析文本中提取适合扩散模型的关键词。
+    优先提取"医学美学改善建议"部分的内容。
+    """
+    lines = analysis_text.strip().split("\n")
+    in_suggestion_section = False
+    suggestion_lines = []
 
-    matched = []
-    for cn_key, en_value in keyword_map.items():
-        if cn_key in requirement:
-            matched.append(en_value)
+    for line in lines:
+        stripped = line.strip()
 
-    if matched:
-        return ", ".join(matched)
+        # 检测改善建议段落
+        if "医学美学改善建议" in stripped or "改善建议" in stripped:
+            in_suggestion_section = True
+            continue
 
-    # 如果没有匹配到关键词，用通用描述
-    return "natural beautification, improved appearance"
+        # 退出段落（遇到下一个标题）
+        if in_suggestion_section and (stripped.startswith("###") or stripped.startswith("##")):
+            if "医学美学改善建议" not in stripped and "改善建议" not in stripped:
+                in_suggestion_section = False
+                continue
 
+        if in_suggestion_section:
+            # 清洗列表符号
+            cleaned = stripped.lstrip("•·-─—*①②③④⑤⑥⑦⑧⑨⑩1234567890.、)） ").strip()
+            if cleaned and len(cleaned) > 2:
+                suggestion_lines.append(cleaned)
 
-def _map_suggestions_to_keywords(suggestions: list[str]) -> str:
-    """将医学美学建议映射为扩散模型关键词"""
-    keyword_map = {
-        "光子嫩肤": "IPL photorejuvenation result, even skin tone",
-        "水光针": "hydrated glowing skin, dewy complexion",
-        "热玛吉": "thermage lifting effect, tightened skin",
-        "射频": "RF skin tightening, firm contour",
-        "美白": "brightened complexion, reduced melanin",
-        "激光": "laser skin resurfacing, refined texture",
-        "紧致": "skin firming, lifted contour",
-        "补水": "deeply hydrated skin, plump complexion",
-    }
+    if suggestion_lines:
+        # 取前 3 条最核心的建议
+        core = suggestion_lines[:3]
+        return "; ".join(core)
 
-    matched = []
-    for suggestion in suggestions:
-        for cn_key, en_value in keyword_map.items():
-            if cn_key in suggestion and en_value not in matched:
-                matched.append(en_value)
+    # 降级：从全文提取包含关键词的句子
+    keywords = ["建议", "改善", "紧致", "美白", "提升", "轮廓", "补水", "抗衰"]
+    fallback = []
+    for line in lines:
+        for kw in keywords:
+            if kw in line and len(line.strip()) > 5:
+                fallback.append(line.strip())
+                break
+        if len(fallback) >= 3:
+            break
 
-    return ", ".join(matched[:3])  # 最多取 3 个，避免提示词过长
+    if fallback:
+        return "; ".join(fallback)
+
+    # 最终降级
+    return "skin improvement, natural beautification"

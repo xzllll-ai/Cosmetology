@@ -93,7 +93,7 @@ export default function HomePage() {
         <p className="font-medium">ℹ️ 使用说明</p>
         <ul className="list-disc list-inside space-y-1 text-blue-600">
           <li>请上传清晰的正面照片</li>
-          <li>分析过程约需 3-5 分钟，请耐心等待</li>
+          <li>分析过程约需 2-4 分钟，请耐心等待</li>
           <li>所有结果仅供参考，不构成医疗建议</li>
         </ul>
       </div>

@@ -1,7 +1,12 @@
 """
-Beauty Pipeline 主编排器
+Beauty Pipeline 主编排器（新流程：3 步）
 
-串联所有模块，实现完整的"评分 → 建议 → 生成 → 复评 → 总结"流水线。
+新流程：
+  1. Qwen 评分 + 医学美学分析（一次推理同时完成）
+  2. RealVision 生成效果图（使用 Qwen 的完整分析作为 prompt）
+  3. Qwen 生成变化总结
+
+注：原 SCUT 评分已废弃，由 Qwen 替代。
 """
 from __future__ import annotations
 
@@ -9,15 +14,12 @@ import json
 import os
 import shutil
 import time
-from dataclasses import asdict
 
 from beauty_pipeline.adapters.qwen_adapter import QwenAdapter
 from beauty_pipeline.adapters.realvision_adapter import RealVisionAdapter
-from beauty_pipeline.adapters.scut_adapter import SCUTAdapter
 from beauty_pipeline.config import BeautyPipelineConfig
 from beauty_pipeline.modules.advisor import Advisor
 from beauty_pipeline.modules.generator import Generator
-from beauty_pipeline.modules.scorer import Scorer
 from beauty_pipeline.modules.summarizer import Summarizer
 from beauty_pipeline.schemas import BeautyPipelineResult
 from beauty_pipeline.utils.image_io import ensure_dir
@@ -26,10 +28,10 @@ from beauty_pipeline.utils.logging_utils import setup_logger, step_log
 
 class BeautyPipeline:
     """
-    医学美容评分 + 建议 + 效果图生成 + 复评 + 总结 流水线
+    医学美容分析 + 效果图生成 + 变化总结 流水线
 
     Usage:
-        config = BeautyPipelineConfig(...)
+        config = BeautyPipelineConfig()
         pipeline = BeautyPipeline(config)
         result = pipeline.run(
             image_path="test.jpg",
@@ -42,10 +44,6 @@ class BeautyPipeline:
         self.logger = setup_logger("beauty_pipeline", config.log_level)
 
         # 初始化 adapters
-        self._scut_adapter = SCUTAdapter(
-            model_path=config.scut_model_path,
-            device=config.scut_device,
-        )
         self._qwen_adapter = QwenAdapter(
             model_path=config.qwen_model_path,
             device=config.qwen_device,
@@ -63,7 +61,6 @@ class BeautyPipeline:
         )
 
         # 初始化 modules
-        self.scorer = Scorer(self._scut_adapter)
         self.advisor = Advisor(self._qwen_adapter)
         self.generator = Generator(self._realvision_adapter)
         self.summarizer = Summarizer(self._qwen_adapter)
@@ -75,7 +72,7 @@ class BeautyPipeline:
         on_progress: "callable | None" = None,
     ) -> BeautyPipelineResult:
         """
-        执行完整流水线。
+        执行完整流水线（新 3 步流程）。
 
         Args:
             image_path: 用户原始照片路径
@@ -85,7 +82,7 @@ class BeautyPipeline:
         Returns:
             BeautyPipelineResult 完整结果
         """
-        total_steps = 5
+        total_steps = 3
         start_time = time.time()
 
         def _report(step: int, msg: str):
@@ -103,52 +100,37 @@ class BeautyPipeline:
         self.logger.info("输出目录: %s", os.path.abspath(output_dir))
         self.logger.info("=" * 60)
 
-        # ── Step 1: SCUT 初始评分 ──
-        _report(1, "SCUT 颜值评分中...")
-        original_score = self.scorer.score(image_path)
-        self.logger.info("  → 原始评分: %.4f (%s)", original_score.score, original_score.level)
-
-        # ── Step 2: Qwen 医学美学分析 ──
-        _report(2, "Qwen 医学美学分析...")
-        advice = self.advisor.analyze(
+        # ── Step 1: Qwen 评分 + 医学美学分析 ──
+        _report(1, "Qwen 评分与医学美学分析中...")
+        score, advice = self.advisor.analyze(
             image_path=image_path,
-            score=original_score,
             user_requirement=user_requirement,
         )
-        self.logger.info("  → 分析完成")
+        self.logger.info("  → Qwen 评分: %.2f (%s)", score.score, score.level)
 
-        # ── Step 3: RealVision 生成效果图 ──
-        _report(3, "RealVision 生成美容效果图...")
+        # ── Step 2: RealVision 生成效果图（用 Qwen 分析作为 prompt） ──
+        _report(2, "RealVision 生成美容效果图（Qwen 分析驱动）...")
         generated = self.generator.generate(
             image_path=image_path,
             user_requirement=user_requirement or "自然美容改善",
-            advice=advice,
+            analysis_full_text=advice.full_text,
             output_path=generated_path,
         )
         self.logger.info("  → 效果图已生成: %s", generated.generated_image_path)
 
-        # ── Step 4: SCUT 复评 ──
-        _report(4, "SCUT 效果图复评中...")
-        generated_score = self.scorer.score(generated.generated_image_path)
-        score_diff = generated_score.score - original_score.score
-        self.logger.info("  → 生成后评分: %.4f (%s), 变化: %+.4f",
-                         generated_score.score, generated_score.level, score_diff)
-
-        # ── Step 5: Qwen 总结 ──
-        _report(5, "Qwen 生成变化总结...")
+        # ── Step 3: Qwen 总结 ──
+        _report(3, "Qwen 生成变化总结...")
         summary = self.summarizer.summarize(
-            original_score=original_score,
-            generated_score=generated_score,
+            score=score,
+            advice=advice,
             user_requirement=user_requirement or "自然美容改善",
-            advice_summary=advice.full_text[:500],
         )
 
         # ── 组装结果 ──
         result = BeautyPipelineResult(
             original_image_path=original_copy,
             generated_image_path=generated.generated_image_path,
-            original_score=original_score,
-            generated_score=generated_score,
+            original_score=score,
             advice=advice,
             summary=summary,
             user_requirement=user_requirement or "",
@@ -160,9 +142,7 @@ class BeautyPipeline:
         elapsed = time.time() - start_time
         self.logger.info("=" * 60)
         self.logger.info("✅ 流水线完成！耗时 %.1f 秒", elapsed)
-        self.logger.info("  原始评分: %.4f (%s)", original_score.score, original_score.level)
-        self.logger.info("  生成后评分: %.4f (%s)", generated_score.score, generated_score.level)
-        self.logger.info("  分数变化: %+.4f", score_diff)
+        self.logger.info("  Qwen 评分: %.2f (%s)", score.score, score.level)
         self.logger.info("  输出目录: %s", os.path.abspath(output_dir))
 
         return result
@@ -177,13 +157,6 @@ class BeautyPipeline:
                 "score": result.original_score.score,
                 "level": result.original_score.level,
             },
-            "generated_score": {
-                "score": result.generated_score.score,
-                "level": result.generated_score.level,
-            },
-            "score_diff": round(
-                result.generated_score.score - result.original_score.score, 4
-            ),
             "user_requirement": result.user_requirement,
             "advice": {
                 "strengths": result.advice.strengths,
@@ -209,8 +182,6 @@ class BeautyPipeline:
 
     def _build_report(self, result: BeautyPipelineResult) -> str:
         """构建用户可读的 Markdown 报告"""
-        score_diff = result.generated_score.score - result.original_score.score
-
         lines = [
             "# 医学美容分析报告",
             "",
@@ -220,9 +191,7 @@ class BeautyPipeline:
             "",
             f"| 项目 | 评分 | 等级 |",
             f"|------|------|------|",
-            f"| 原始照片 | {result.original_score.score:.2f} | {result.original_score.level} |",
-            f"| 美容效果 | {result.generated_score.score:.2f} | {result.generated_score.level} |",
-            f"| 变化 | {score_diff:+.2f} | - |",
+            f"| Qwen 美学评分 | {result.original_score.score:.2f} | {result.original_score.level} |",
             "",
         ]
 

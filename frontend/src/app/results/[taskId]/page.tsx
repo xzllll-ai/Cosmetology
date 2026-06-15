@@ -17,6 +17,15 @@ export default function ResultsPage() {
 
   const [task, setTask] = useState<TaskStatus | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [showResults, setShowResults] = useState(false);
+
+  // 任务完成后延迟 2 秒再展示结果，让用户看到全绿钩
+  useEffect(() => {
+    if (task?.status === "completed" && !showResults) {
+      const timer = setTimeout(() => setShowResults(true), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [task?.status, showResults]);
 
   const fetchStatus = useCallback(async () => {
     try {
@@ -30,18 +39,21 @@ export default function ResultsPage() {
     }
   }, [taskId]);
 
+  // 轮询，直到任务完成或失败才停止
   useEffect(() => {
     fetchStatus();
-    const interval = setInterval(fetchStatus, 3000);
+    const interval = setInterval(() => {
+      setTask((prev) => {
+        if (prev?.status === "completed" || prev?.status === "failed") {
+          clearInterval(interval);
+          return prev;
+        }
+        fetchStatus();
+        return prev;
+      });
+    }, 3000);
     return () => clearInterval(interval);
   }, [fetchStatus]);
-
-  // 轮询直到完成
-  useEffect(() => {
-    if (task?.status === "completed" || task?.status === "failed") {
-      // 停止轮询（通过清除上面的 interval）
-    }
-  }, [task?.status]);
 
   if (error) {
     return (
@@ -59,7 +71,7 @@ export default function ResultsPage() {
     );
   }
 
-  if (!task || task.status === "pending" || task.status === "processing") {
+  if (!task || task.status === "pending" || task.status === "processing" || (task.status === "completed" && !showResults)) {
     return (
       <div className="py-8">
         <ProgressTracker
@@ -81,30 +93,13 @@ export default function ResultsPage() {
         <h2 className="text-2xl font-bold text-gray-800">分析完成</h2>
       </div>
 
-      {/* 评分对比 */}
+      {/* Qwen 美学评分 */}
       <div className="bg-white rounded-2xl shadow-lg p-8">
         <h3 className="text-lg font-bold text-gray-800 mb-6 text-center">
-          📊 评分对比
+          📊 美学评分
         </h3>
-        <div className="flex items-center justify-center gap-8 md:gap-16 flex-wrap">
-          <ScoreDisplay label="原始照片" score={result.original_score} />
-          <div className="flex flex-col items-center gap-1">
-            <span className="text-3xl">→</span>
-            <span
-              className={`text-lg font-bold ${
-                result.score_diff > 0
-                  ? "text-green-600"
-                  : result.score_diff < 0
-                  ? "text-red-600"
-                  : "text-gray-600"
-              }`}
-            >
-              {result.score_diff > 0 ? "+" : ""}
-              {result.score_diff.toFixed(2)}
-            </span>
-            <span className="text-xs text-gray-400">变化</span>
-          </div>
-          <ScoreDisplay label="AI 效果图" score={result.generated_score} />
+        <div className="flex items-center justify-center gap-8">
+          <ScoreDisplay label="Qwen 美学评分" score={result.original_score} />
         </div>
       </div>
 
