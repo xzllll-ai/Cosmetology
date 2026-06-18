@@ -5,6 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { getTaskStatus } from "@/lib/api";
 import { TaskStatus, AnalysisResult } from "@/types";
 import ProgressTracker from "@/components/ProgressTracker";
+import ErrorBoundary from "@/components/ErrorBoundary";
 import ScorePanel from "@/components/ScorePanel";
 import AdviceCard from "@/components/AdviceCard";
 import BeforeAfterCompare from "@/components/BeforeAfterCompare";
@@ -107,25 +108,32 @@ export default function ResultsPage() {
       </div>
 
       {/* 评分面板（含子维度 + 前后对比） */}
-      <ScorePanel
-        originalScore={result.original_score}
-        generatedScore={result.generated_score}
-        scoreDiff={result.score_diff}
-        subDimensionScores={subDimensions}
-      />
+      <ErrorBoundary>
+        <ScorePanel
+          originalScore={result.original_score}
+          generatedScore={result.generated_score}
+          scoreDiff={result.score_diff}
+          subDimensionScores={subDimensions}
+        />
+      </ErrorBoundary>
 
       {/* 前后对比 */}
+      <ErrorBoundary>
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 md:p-8">
         <BeforeAfterCompare
           originalUrl={result.original_image_url}
           generatedUrl={result.generated_image_url}
         />
       </div>
+      </ErrorBoundary>
 
       {/* 用户需求 */}
-      <UserRequirement requirement={result.user_requirement} />
+      <ErrorBoundary>
+        <UserRequirement requirement={result.user_requirement} />
+      </ErrorBoundary>
 
       {/* 分析建议（分类展示） */}
+      <ErrorBoundary>
       <div className="space-y-4">
         <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">🔍 医学美学分析</h3>
         <div className="space-y-6">
@@ -150,12 +158,17 @@ export default function ResultsPage() {
           )}
         </div>
       </div>
+      </ErrorBoundary>
 
       {/* 总结报告 */}
-      <SummaryReport summary={result.summary} />
+      <ErrorBoundary>
+        <SummaryReport summary={result.summary} />
+      </ErrorBoundary>
 
       {/* 操作栏 */}
-      <ActionBar taskId={taskId} />
+      <ErrorBoundary>
+        <ActionBar taskId={taskId} />
+      </ErrorBoundary>
     </div>
   );
 }
