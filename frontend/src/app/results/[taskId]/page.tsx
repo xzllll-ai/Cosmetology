@@ -103,7 +103,7 @@ export default function ResultsPage() {
   return (
     <div className="space-y-6 animate-fade-in" role="main" aria-label="分析结果">
       {/* 完成提示 — 紧凑 */}
-      <div className="text-center">
+      <div className="text-center animate-slide-up" style={{ animationDelay: "0s" }}>
         <div className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-100 dark:border-green-800/30 shadow-sm">
           <span className="text-2xl">🎉</span>
           <div className="text-left">
@@ -115,17 +115,19 @@ export default function ResultsPage() {
 
       {/* 评分面板 */}
       <ErrorBoundary>
+        <div className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
         <ScorePanel
           originalScore={safeResult!.original_score}
           generatedScore={safeResult!.generated_score}
           scoreDiff={safeResult!.score_diff}
           subDimensionScores={subDimensions}
         />
+        </div>
       </ErrorBoundary>
 
       {/* 前后对比 — 撑满 */}
       <ErrorBoundary>
-        <div className="bg-white dark:bg-gray-800/80 rounded-3xl shadow-xl shadow-pink-500/5 border border-gray-100 dark:border-gray-700 overflow-hidden">
+        <div className="bg-white dark:bg-gray-800/80 rounded-3xl shadow-xl shadow-pink-500/5 border border-gray-100 dark:border-gray-700 overflow-hidden animate-slide-up" style={{ animationDelay: "0.2s" }}>
           <div className="bg-gradient-to-r from-pink-500/5 to-purple-600/5 dark:from-pink-500/10 dark:to-purple-600/10 px-6 md:px-8 py-5 border-b border-gray-50 dark:border-gray-700">
             <div className="flex items-center justify-center gap-3">
               <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm">
@@ -145,12 +147,14 @@ export default function ResultsPage() {
 
       {/* 用户需求 */}
       <ErrorBoundary>
+        <div className="animate-slide-up" style={{ animationDelay: "0.3s" }}>
         <UserRequirement requirement={safeResult!.user_requirement} />
+        </div>
       </ErrorBoundary>
 
       {/* 分析建议（分类展示） */}
       <ErrorBoundary>
-      <div className="space-y-4">
+      <div className="space-y-4 animate-slide-up" style={{ animationDelay: "0.4s" }}>
         <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">🔍 医学美学分析</h3>
         <div className="space-y-6">
           {/* 分类展示（新） */}
@@ -178,12 +182,16 @@ export default function ResultsPage() {
 
       {/* 总结报告 */}
       <ErrorBoundary>
+        <div className="animate-slide-up" style={{ animationDelay: "0.5s" }}>
         <SummaryReport summary={safeResult!.summary} />
+        </div>
       </ErrorBoundary>
 
       {/* 操作栏 */}
       <ErrorBoundary>
+        <div className="animate-slide-up" style={{ animationDelay: "0.6s" }}>
         <ActionBar taskId={taskId} />
+        </div>
       </ErrorBoundary>
     </div>
   );
