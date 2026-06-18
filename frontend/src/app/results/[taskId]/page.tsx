@@ -101,32 +101,47 @@ export default function ResultsPage() {
 
 
   return (
-    <div className="space-y-8 animate-fade-in" role="main" aria-label="分析结果">
-      {/* 完成提示 */}
-      <div className="text-center space-y-2">
-        <div className="text-4xl">🎉</div>
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">分析完成</h2>
+    <div className="space-y-6 animate-fade-in" role="main" aria-label="分析结果">
+      {/* 完成提示 — 紧凑 */}
+      <div className="text-center">
+        <div className="inline-flex items-center gap-3 px-5 py-3 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-2xl border border-green-100 dark:border-green-800/30 shadow-sm">
+          <span className="text-2xl">🎉</span>
+          <div className="text-left">
+            <h2 className="font-bold text-green-800 dark:text-green-300">分析完成</h2>
+            <p className="text-xs text-green-600 dark:text-green-400">原始评分 {safeResult!.original_score.score.toFixed(2)} · {safeResult!.original_score.level}</p>
+          </div>
+        </div>
       </div>
 
-      {/* 评分面板（含子维度 + 前后对比） */}
-      <ErrorBoundary>
-        <ScorePanel
-          originalScore={safeResult!.original_score}
-          generatedScore={safeResult!.generated_score}
-          scoreDiff={safeResult!.score_diff}
-          subDimensionScores={subDimensions}
-        />
-      </ErrorBoundary>
-
-      {/* 前后对比 */}
-      <ErrorBoundary>
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 md:p-8">
-        <BeforeAfterCompare
-          originalUrl={safeResult!.original_image_url}
-          generatedUrl={safeResult!.generated_image_url}
-        />
+      {/* 评分面板（含子维度 + 前后对比）— 桌面端并排 */}
+      <div className="grid md:grid-cols-2 gap-6">
+        <ErrorBoundary>
+          <ScorePanel
+            originalScore={safeResult!.original_score}
+            generatedScore={safeResult!.generated_score}
+            scoreDiff={safeResult!.score_diff}
+            subDimensionScores={subDimensions}
+          />
+        </ErrorBoundary>
+        <ErrorBoundary>
+          <div className="bg-white dark:bg-gray-800/80 rounded-3xl shadow-xl shadow-pink-500/5 border border-gray-100 dark:border-gray-700 overflow-hidden h-full">
+            <div className="bg-gradient-to-r from-pink-500/5 to-purple-600/5 dark:from-pink-500/10 dark:to-purple-600/10 px-6 md:px-8 py-5 border-b border-gray-50 dark:border-gray-700">
+              <div className="flex items-center justify-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm">
+                  <span className="text-white text-sm">⟺</span>
+                </div>
+                <h3 className="text-lg font-bold bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 bg-clip-text text-transparent">前后对比</h3>
+              </div>
+            </div>
+            <div className="p-6 md:p-8">
+              <BeforeAfterCompare
+                originalUrl={safeResult!.original_image_url}
+                generatedUrl={safeResult!.generated_image_url}
+              />
+            </div>
+          </div>
+        </ErrorBoundary>
       </div>
-      </ErrorBoundary>
 
       {/* 用户需求 */}
       <ErrorBoundary>

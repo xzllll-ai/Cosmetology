@@ -32,7 +32,7 @@ function splitSections(markdown: string): { title: string; content: string }[] {
 }
 
 export default function SummaryReport({ summary }: Props) {
-  const [expandedAll, setExpandedAll] = useState(true);
+  const [expandedAll, setExpandedAll] = useState(false);
 
   if (!summary) return null;
 
