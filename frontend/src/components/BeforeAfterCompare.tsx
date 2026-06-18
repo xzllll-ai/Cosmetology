@@ -60,13 +60,19 @@ export default function BeforeAfterCompare({ originalUrl, generatedUrl }: Props)
 
   return (
     <div className="space-y-3">
-      <div className="flex justify-between text-sm font-medium text-gray-600 dark:text-gray-400">
-        <span>📸 原始照片</span>
-        <span>✨ AI 效果图</span>
+      <div className="flex justify-between text-xs font-medium text-gray-500 dark:text-gray-400">
+        <span className="flex items-center gap-1.5">
+          <span className="w-2 h-2 rounded-full bg-green-400" />
+          原始照片
+        </span>
+        <span className="flex items-center gap-1.5">
+          AI 效果图
+          <span className="w-2 h-2 rounded-full bg-purple-400" />
+        </span>
       </div>
       <div
         ref={containerRef}
-        className="relative w-full aspect-[4/3] md:aspect-square rounded-2xl overflow-hidden shadow-lg cursor-col-resize select-none"
+        className="relative w-full aspect-[4/3] md:aspect-square rounded-2xl overflow-hidden shadow-xl cursor-col-resize select-none bg-gray-100 dark:bg-gray-800"
         style={{ touchAction: "none" }}
         role="slider"
         aria-label="前后对比滑块"
@@ -104,17 +110,35 @@ export default function BeforeAfterCompare({ originalUrl, generatedUrl }: Props)
           />
         </div>
 
+        {/* 角标 */}
+        <div className="absolute top-3 left-3 px-2.5 py-1 bg-black/50 backdrop-blur-sm rounded-lg text-[11px] text-white font-medium z-20">
+          原图
+        </div>
+        <div
+          className="absolute top-3 right-3 px-2.5 py-1 bg-black/50 backdrop-blur-sm rounded-lg text-[11px] text-white font-medium z-20"
+          style={{ opacity: sliderPos > 80 ? 0.3 : 1 }}
+        >
+          AI
+        </div>
+
         {/* 滑块线 */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-white shadow-md z-10"
+          className="absolute top-0 bottom-0 w-0.5 z-10 pointer-events-none"
           style={{ left: `${sliderPos}%` }}
         >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-white rounded-full shadow-lg flex items-center justify-center">
-            <span className="text-gray-600 text-xs md:text-sm">⟺</span>
+          <div className="absolute inset-0 bg-white/80" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 md:w-12 md:h-12 bg-white rounded-full shadow-xl flex items-center justify-center transition-transform duration-150 hover:scale-110 active:scale-95 border-2 border-white">
+            <div className="w-8 h-8 md:w-9 md:h-9 rounded-full bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
+              <span className="text-white text-xs md:text-sm font-bold">⟺</span>
+            </div>
           </div>
         </div>
       </div>
-      <p className="text-xs text-gray-400 dark:text-gray-500 text-center">拖动滑块或使用 ← → 键对比前后效果</p>
+      <div className="flex items-center justify-center gap-4 text-[11px] text-gray-400 dark:text-gray-500">
+        <span>← 拖动滑块 →</span>
+        <span className="w-1 h-1 rounded-full bg-gray-300" />
+        <span>← → 键盘控制</span>
+      </div>
     </div>
   );
 }

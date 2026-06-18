@@ -24,49 +24,57 @@ export default function ScoreComparisonBar({ originalScore, generatedScore, scor
   const genColor = hasComparison ? getScoreColor(generatedScore!.score) : origColor;
 
   return (
-    <div className="space-y-3">
-      <div className="space-y-1">
+    <div className="space-y-4">
+      <div className="space-y-1.5">
         <div className="flex justify-between text-sm">
-          <span className="font-medium text-gray-700 dark:text-gray-300">原始照片</span>
-          <span className="font-semibold" style={{ color: origColor }}>
+          <span className="flex items-center gap-1.5 font-medium text-gray-700 dark:text-gray-300">
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: origColor }} />
+            原始照片
+          </span>
+          <span className="font-bold tabular-nums" style={{ color: origColor }}>
             {originalScore.score.toFixed(2)}
           </span>
         </div>
-        <div className="w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+        <div className="w-full h-3.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
           <div
-            className="h-full rounded-full transition-all duration-1000"
-            style={{ width: `${originalPct}%`, backgroundColor: origColor }}
+            className="h-full rounded-full transition-all duration-1000 ease-out"
+            style={{ width: `${originalPct}%`, background: `linear-gradient(90deg, ${origColor}88, ${origColor})` }}
           />
         </div>
-        <span className="text-xs text-gray-400">{originalScore.level}</span>
+        <span className="text-xs text-gray-400 dark:text-gray-500">{originalScore.level}</span>
       </div>
 
       {hasComparison && (
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <div className="flex justify-between text-sm">
-            <span className="font-medium text-gray-700 dark:text-gray-300">AI 效果图</span>
-            <span className="font-semibold" style={{ color: genColor }}>
+            <span className="flex items-center gap-1.5 font-medium text-gray-700 dark:text-gray-300">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: genColor }} />
+              AI 效果图
+            </span>
+            <span className="font-bold tabular-nums" style={{ color: genColor }}>
               {generatedScore!.score.toFixed(2)}
             </span>
           </div>
-          <div className="w-full h-3 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+          <div className="w-full h-3.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
             <div
-              className="h-full rounded-full transition-all duration-1000"
-              style={{ width: `${generatedPct}%`, backgroundColor: genColor }}
+              className="h-full rounded-full transition-all duration-1000 ease-out"
+              style={{ width: `${generatedPct}%`, background: `linear-gradient(90deg, ${genColor}88, ${genColor})` }}
             />
           </div>
           <div className="flex justify-between items-center">
-            <span className="text-xs text-gray-400">{generatedScore!.level}</span>
+            <span className="text-xs text-gray-400 dark:text-gray-500">{generatedScore!.level}</span>
             {scoreDiff !== undefined && (
               <span
-                className={`text-xs font-bold px-2 py-0.5 rounded-full ${
+                className={`inline-flex items-center gap-0.5 text-xs font-bold px-2.5 py-1 rounded-full ${
                   scoreDiff > 0
-                    ? "text-green-700 bg-green-50 dark:bg-green-900/30 dark:text-green-400"
+                    ? "text-green-700 bg-green-50 dark:bg-green-900/30 dark:text-green-400 ring-1 ring-green-200 dark:ring-green-700"
                     : scoreDiff < 0
-                    ? "text-red-700 bg-red-50 dark:bg-red-900/30 dark:text-red-400"
-                    : "text-gray-500 bg-gray-50"
+                    ? "text-red-700 bg-red-50 dark:bg-red-900/30 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-700"
+                    : "text-gray-500 bg-gray-50 dark:bg-gray-800 ring-1 ring-gray-200"
                 }`}
               >
+                {scoreDiff > 0 ? "↑" : scoreDiff < 0 ? "↓" : "→"}
+                {" "}
                 {scoreDiff > 0 ? "+" : ""}{scoreDiff.toFixed(2)}
               </span>
             )}

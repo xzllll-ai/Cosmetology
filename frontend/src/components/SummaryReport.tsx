@@ -53,12 +53,19 @@ export default function SummaryReport({ summary }: Props) {
   }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg overflow-hidden">
-      <div className="bg-gradient-to-r from-purple-500 to-pink-500 px-6 py-4 flex items-center justify-between">
-        <h3 className="text-white font-bold text-lg">📝 变化总结报告</h3>
+    <div className="bg-white dark:bg-gray-800/80 rounded-3xl shadow-xl shadow-purple-500/5 border border-gray-100 dark:border-gray-700 overflow-hidden">
+      <div className="bg-gradient-to-r from-purple-500/10 to-pink-500/10 dark:from-purple-500/15 dark:to-pink-500/15 px-6 py-5 flex items-center justify-between border-b border-gray-50 dark:border-gray-700">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-sm">
+            <span className="text-white text-sm">📝</span>
+          </div>
+          <h3 className="text-lg font-bold bg-gradient-to-r from-purple-600 to-pink-600 dark:from-purple-400 dark:to-pink-400 bg-clip-text text-transparent">
+            变化总结报告
+          </h3>
+        </div>
         <button
           onClick={() => setExpandedAll(!expandedAll)}
-          className="text-white/80 hover:text-white text-xs bg-white/20 px-3 py-1 rounded-full transition"
+          className="text-xs text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 px-3 py-1.5 rounded-full transition font-medium"
         >
           {expandedAll ? "全部收起" : "全部展开"}
         </button>

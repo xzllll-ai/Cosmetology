@@ -7,6 +7,8 @@
   --background: #ffffff;
   --card-bg: #ffffff;
   --card-border: #e5e7eb;
+  --glow-pink: rgba(236, 72, 153, 0.15);
+  --glow-purple: rgba(168, 85, 247, 0.15);
 }
 
 .dark {
@@ -14,6 +16,8 @@
   --background: #111827;
   --card-bg: #1f2937;
   --card-border: #374151;
+  --glow-pink: rgba(236, 72, 153, 0.08);
+  --glow-purple: rgba(168, 85, 247, 0.08);
 }
 
 body {
@@ -22,38 +26,41 @@ body {
   font-family: "Noto Sans SC", "PingFang SC", "Microsoft YaHei", sans-serif;
 }
 
-/* 自定义滚动条 */
-::-webkit-scrollbar {
-  width: 6px;
-}
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
-}
-::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
-}
+/* ─── 滚动条 ─── */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: #f1f1f1; }
+::-webkit-scrollbar-thumb { background: #c1c1c1; border-radius: 3px; }
 
-/* 评分动画 */
+/* ─── 动画 ─── */
 @keyframes score-fill {
   from { stroke-dashoffset: 283; }
 }
-
 .score-circle {
   animation: score-fill 1.5s ease-out forwards;
 }
 
-/* 进度脉冲 */
 @keyframes pulse-glow {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
 }
-
 .animate-pulse-glow {
   animation: pulse-glow 2s ease-in-out infinite;
 }
 
-/* 卡片悬浮 */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* ─── 工具类 ─── */
 .card-hover {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
@@ -62,15 +69,30 @@ body {
   box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
 }
 
-/* 减少动效 */
+.text-gradient {
+  background: linear-gradient(135deg, #ec4899, #a855f7);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+.dark .glass {
+  background: rgba(31, 41, 55, 0.7);
+}
+
+.glow-pink {
+  box-shadow: 0 0 20px var(--glow-pink);
+}
+
+/* ─── 减少动效 ─── */
 @media (prefers-reduced-motion: reduce) {
-  .score-circle,
-  .animate-pulse-glow,
-  .animate-fade-in,
-  .animate-slide-up {
+  .score-circle, .animate-pulse-glow, .animate-fade-in, .animate-slide-up, .animate-float {
     animation: none !important;
   }
-  .card-hover {
-    transition: none !important;
-  }
+  .card-hover { transition: none !important; }
 }
