@@ -33,6 +33,26 @@ export async function getTaskStatus(taskId: string): Promise<TaskStatus> {
   return res.json();
 }
 
+export async function getReport(taskId: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/tasks/${taskId}/report`);
+  if (!res.ok) throw new Error("获取报告失败");
+  const data = await res.json();
+  return data.report || "";
+}
+
+export async function downloadReport(taskId: string): Promise<void> {
+  const reportMd = await getReport(taskId);
+  const blob = new Blob([reportMd], { type: "text/markdown" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `beauty-report-${taskId}.md`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 export function getImageUrl(path: string): string {
   return `${API_BASE}${path}`;
 }

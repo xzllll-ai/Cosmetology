@@ -1,14 +1,17 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useMemo } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { getTaskStatus } from "@/lib/api";
 import { TaskStatus, AnalysisResult } from "@/types";
 import ProgressTracker from "@/components/ProgressTracker";
-import ScoreDisplay from "@/components/ScoreDisplay";
+import ScorePanel from "@/components/ScorePanel";
 import AdviceCard from "@/components/AdviceCard";
 import BeforeAfterCompare from "@/components/BeforeAfterCompare";
-import ReportView from "@/components/ReportView";
+import SummaryReport from "@/components/SummaryReport";
+import ActionBar from "@/components/ActionBar";
+import UserRequirement from "@/components/UserRequirement";
+import { parseAdvice, estimateSubDimensionScores } from "@/lib/analysisParser";
 
 export default function ResultsPage() {
   const params = useParams();
@@ -57,7 +60,7 @@ export default function ResultsPage() {
 
   if (error) {
     return (
-      <div className="max-w-2xl mx-auto text-center py-20 space-y-6">
+      <div className="max-w-2xl mx-auto text-center py-20 space-y-6" role="alert">
         <div className="text-6xl">😵</div>
         <h2 className="text-2xl font-bold text-gray-800">分析失败</h2>
         <p className="text-gray-500">{error}</p>
@@ -85,26 +88,34 @@ export default function ResultsPage() {
   // 完成状态
   const result = task.result as AnalysisResult;
 
+  // 解析建议 + 估算子维度分数
+  const { items: parsedItems, categories, categoryCounts } = useMemo(
+    () => parseAdvice(result.advice),
+    [result.advice]
+  );
+  const { dimensions: subDimensions } = useMemo(
+    () => estimateSubDimensionScores(result.original_score, result.advice),
+    [result.original_score, result.advice]
+  );
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 animate-fade-in" role="main" aria-label="分析结果">
       {/* 完成提示 */}
       <div className="text-center space-y-2">
         <div className="text-4xl">🎉</div>
-        <h2 className="text-2xl font-bold text-gray-800">分析完成</h2>
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100">分析完成</h2>
       </div>
 
-      {/* Qwen 美学评分 */}
-      <div className="bg-white rounded-2xl shadow-lg p-8">
-        <h3 className="text-lg font-bold text-gray-800 mb-6 text-center">
-          📊 美学评分
-        </h3>
-        <div className="flex items-center justify-center gap-8">
-          <ScoreDisplay label="Qwen 美学评分" score={result.original_score} />
-        </div>
-      </div>
+      {/* 评分面板（含子维度 + 前后对比） */}
+      <ScorePanel
+        originalScore={result.original_score}
+        generatedScore={result.generated_score}
+        scoreDiff={result.score_diff}
+        subDimensionScores={subDimensions}
+      />
 
       {/* 前后对比 */}
-      <div className="bg-white rounded-2xl shadow-lg p-8">
+      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 md:p-8">
         <BeforeAfterCompare
           originalUrl={result.original_image_url}
           generatedUrl={result.generated_image_url}
@@ -112,56 +123,39 @@ export default function ResultsPage() {
       </div>
 
       {/* 用户需求 */}
-      {result.user_requirement && (
-        <div className="bg-purple-50 rounded-2xl p-6 border border-purple-100">
-          <h3 className="font-bold text-purple-800 mb-2">💡 您的需求</h3>
-          <p className="text-purple-700">{result.user_requirement}</p>
-        </div>
-      )}
+      <UserRequirement requirement={result.user_requirement} />
 
-      {/* 分析建议 */}
+      {/* 分析建议（分类展示） */}
       <div className="space-y-4">
-        <h3 className="text-lg font-bold text-gray-800">🔍 医学美学分析</h3>
-        <div className="grid md:grid-cols-2 gap-4">
-          <AdviceCard
-            title="当前优点"
-            icon="👍"
-            items={result.advice.strengths}
-            color="pink"
-          />
-          <AdviceCard
-            title="可改善方面"
-            icon="🎯"
-            items={result.advice.weaknesses}
-            color="amber"
-          />
-          <AdviceCard
-            title="医学美学建议"
-            icon="💡"
-            items={result.advice.medical_aesthetic_suggestions}
-            color="blue"
-          />
-          <AdviceCard
-            title="风险提示"
-            icon="⚠️"
-            items={result.advice.risk_notes}
-            color="red"
-          />
+        <h3 className="text-lg font-bold text-gray-800 dark:text-gray-100">🔍 医学美学分析</h3>
+        <div className="space-y-6">
+          {/* 分类展示（新） */}
+          {parsedItems.length > 0 && (
+            <AdviceCard
+              title="综合建议"
+              icon="💡"
+              categorizedItems={parsedItems}
+              categories={categories}
+              categoryCounts={categoryCounts}
+            />
+          )}
+          {/* 旧版原始列表（备选） */}
+          {parsedItems.length === 0 && (
+            <div className="grid md:grid-cols-2 gap-4">
+              <AdviceCard title="当前优点" icon="👍" items={result.advice.strengths} color="pink" />
+              <AdviceCard title="可改善方面" icon="🎯" items={result.advice.weaknesses} color="amber" />
+              <AdviceCard title="医学美学建议" icon="💡" items={result.advice.medical_aesthetic_suggestions} color="blue" />
+              <AdviceCard title="风险提示" icon="⚠️" items={result.advice.risk_notes} color="red" />
+            </div>
+          )}
         </div>
       </div>
 
       {/* 总结报告 */}
-      <ReportView summary={result.summary} />
+      <SummaryReport summary={result.summary} />
 
-      {/* 重新分析 */}
-      <div className="text-center pb-8">
-        <button
-          className="px-8 py-3 bg-gradient-to-r from-pink-500 to-purple-600 text-white rounded-xl font-bold hover:from-pink-600 hover:to-purple-700 transition shadow-lg"
-          onClick={() => router.push("/")}
-        >
-          ✨ 重新分析
-        </button>
-      </div>
+      {/* 操作栏 */}
+      <ActionBar taskId={taskId} />
     </div>
   );
 }

@@ -5,6 +5,15 @@
 :root {
   --foreground: #171717;
   --background: #ffffff;
+  --card-bg: #ffffff;
+  --card-border: #e5e7eb;
+}
+
+.dark {
+  --foreground: #f3f4f6;
+  --background: #111827;
+  --card-bg: #1f2937;
+  --card-border: #374151;
 }
 
 body {
@@ -51,4 +60,17 @@ body {
 .card-hover:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+/* 减少动效 */
+@media (prefers-reduced-motion: reduce) {
+  .score-circle,
+  .animate-pulse-glow,
+  .animate-fade-in,
+  .animate-slide-up {
+    animation: none !important;
+  }
+  .card-hover {
+    transition: none !important;
+  }
 }

@@ -67,7 +67,7 @@ def get_pipeline() -> BeautyPipeline:
 
 def _serialize_result(result, task_id: str) -> dict:
     """将 BeautyPipelineResult 序列化为 JSON 字典"""
-    return {
+    data = {
         "original_score": {
             "score": result.original_score.score,
             "level": result.original_score.level,
@@ -84,6 +84,15 @@ def _serialize_result(result, task_id: str) -> dict:
         "original_image_url": f"/static/{task_id}/original.png",
         "generated_image_url": f"/static/{task_id}/generated.png",
     }
+    if result.generated_score:
+        data["generated_score"] = {
+            "score": result.generated_score.score,
+            "level": result.generated_score.level,
+        }
+        data["score_diff"] = round(
+            result.generated_score.score - result.original_score.score, 3
+        )
+    return data
 
 
 def _run_pipeline_task(
@@ -153,7 +162,7 @@ def _run_pipeline_task(
 @app.get("/health")
 async def health():
     """健康检查"""
-    return {"status": "ok"}
+    data = {"status": "ok"}
 
 
 @app.post("/api/analyze")
@@ -218,7 +227,7 @@ async def get_task(task_id: str):
         )
 
     task = tasks[task_id]
-    return {
+    data = {
         "task_id": task["task_id"],
         "status": task["status"],
         "progress": task["progress"],
@@ -242,7 +251,7 @@ async def get_report(task_id: str):
     with open(report_path, "r", encoding="utf-8") as f:
         report = f.read()
 
-    return {"report": report}
+    data = {"report": report}
 
 
 @app.get("/api/tasks")

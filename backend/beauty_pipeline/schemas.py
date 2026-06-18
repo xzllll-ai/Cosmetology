@@ -49,6 +49,7 @@ class BeautyPipelineResult:
     original_image_path: str = ""
     generated_image_path: str = ""
     original_score: BeautyScore | None = None
+    generated_score: BeautyScore | None = None
     advice: BeautyAdvice | None = None
     summary: str = ""
     user_requirement: str = ""

@@ -47,15 +47,33 @@ export default function BeforeAfterCompare({ originalUrl, generatedUrl }: Props)
     [updatePosition]
   );
 
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        setSliderPos((prev) => Math.max(0, prev - 5));
+      } else if (e.key === "ArrowRight") {
+        setSliderPos((prev) => Math.min(100, prev + 5));
+      }
+    },
+    []
+  );
+
   return (
     <div className="space-y-3">
-      <div className="flex justify-between text-sm font-medium text-gray-600">
+      <div className="flex justify-between text-sm font-medium text-gray-600 dark:text-gray-400">
         <span>📸 原始照片</span>
         <span>✨ AI 效果图</span>
       </div>
       <div
         ref={containerRef}
-        className="relative w-full aspect-square rounded-2xl overflow-hidden shadow-lg cursor-col-resize select-none"
+        className="relative w-full aspect-[4/3] md:aspect-square rounded-2xl overflow-hidden shadow-lg cursor-col-resize select-none"
+        style={{ touchAction: "none" }}
+        role="slider"
+        aria-label="前后对比滑块"
+        aria-valuenow={sliderPos}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        tabIndex={0}
         onMouseDown={handleMouseDown}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
@@ -63,6 +81,7 @@ export default function BeforeAfterCompare({ originalUrl, generatedUrl }: Props)
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleMouseUp}
+        onKeyDown={handleKeyDown}
       >
         {/* 原图（底层） */}
         <img
@@ -90,12 +109,12 @@ export default function BeforeAfterCompare({ originalUrl, generatedUrl }: Props)
           className="absolute top-0 bottom-0 w-0.5 bg-white shadow-md z-10"
           style={{ left: `${sliderPos}%` }}
         >
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center">
-            <span className="text-gray-600 text-sm">⟺</span>
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-8 h-8 md:w-10 md:h-10 bg-white rounded-full shadow-lg flex items-center justify-center">
+            <span className="text-gray-600 text-xs md:text-sm">⟺</span>
           </div>
         </div>
       </div>
-      <p className="text-xs text-gray-400 text-center">拖动滑块对比前后效果</p>
+      <p className="text-xs text-gray-400 dark:text-gray-500 text-center">拖动滑块或使用 ← → 键对比前后效果</p>
     </div>
   );
 }

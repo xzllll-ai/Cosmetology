@@ -31,8 +31,11 @@ export default function ScoreDisplay({ label, score, color }: Props) {
   const offset = circumference - (percentage / 100) * circumference;
 
   return (
-    <div className="flex flex-col items-center gap-3">
-      <div className="relative w-32 h-32">
+    <div
+      className="flex flex-col items-center gap-3"
+      aria-label={`${label}: ${score.score.toFixed(2)} out of 5, level ${score.level}`}
+    >
+      <div className="relative w-24 h-24 md:w-32 md:h-32">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 100 100">
           <circle
             cx="50"
@@ -56,18 +59,18 @@ export default function ScoreDisplay({ label, score, color }: Props) {
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-2xl font-bold" style={{ color: strokeColor }}>
+          <span className="text-lg md:text-2xl font-bold" style={{ color: strokeColor }}>
             {score.score.toFixed(2)}
           </span>
-          <span className="text-xs text-gray-400">/ 5.00</span>
+          <span className="text-[10px] md:text-xs text-gray-400">/ 5.00</span>
         </div>
       </div>
       <span
-        className={`text-sm font-medium px-3 py-1 rounded-full ${getLevelColor(score.level)}`}
+        className={`text-xs md:text-sm font-medium px-2 md:px-3 py-1 rounded-full ${getLevelColor(score.level)}`}
       >
         {score.level}
       </span>
-      <span className="text-sm text-gray-600 font-medium">{label}</span>
+      <span className="text-xs md:text-sm text-gray-600 dark:text-gray-400 font-medium">{label}</span>
     </div>
   );
 }
