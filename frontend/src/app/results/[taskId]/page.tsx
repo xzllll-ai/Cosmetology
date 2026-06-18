@@ -59,6 +59,17 @@ export default function ResultsPage() {
     return () => clearInterval(interval);
   }, [fetchStatus]);
 
+  // Hooks must be BEFORE early returns — always same number every render
+  const safeResult = task?.result as AnalysisResult | undefined;
+  const { items: parsedItems, categories, categoryCounts } = useMemo(
+    () => safeResult ? parseAdvice(safeResult.advice) : { items: [], categories: [], categoryCounts: {} as Record<string, number> },
+    [safeResult?.advice]
+  );
+  const { dimensions: subDimensions } = useMemo(
+    () => safeResult ? estimateSubDimensionScores(safeResult.original_score, safeResult.advice) : { dimensions: [] },
+    [safeResult?.original_score, safeResult?.advice]
+  );
+
   if (error) {
     return (
       <div className="max-w-2xl mx-auto text-center py-20 space-y-6" role="alert">
@@ -86,18 +97,8 @@ export default function ResultsPage() {
     );
   }
 
-  // 完成状态
-  const result = task.result as AnalysisResult;
+  // 完成状态 — safeResult 已在上面声明，这里保证非空
 
-  // 解析建议 + 估算子维度分数
-  const { items: parsedItems, categories, categoryCounts } = useMemo(
-    () => parseAdvice(result.advice),
-    [result.advice]
-  );
-  const { dimensions: subDimensions } = useMemo(
-    () => estimateSubDimensionScores(result.original_score, result.advice),
-    [result.original_score, result.advice]
-  );
 
   return (
     <div className="space-y-8 animate-fade-in" role="main" aria-label="分析结果">
@@ -110,9 +111,9 @@ export default function ResultsPage() {
       {/* 评分面板（含子维度 + 前后对比） */}
       <ErrorBoundary>
         <ScorePanel
-          originalScore={result.original_score}
-          generatedScore={result.generated_score}
-          scoreDiff={result.score_diff}
+          originalScore={safeResult!.original_score}
+          generatedScore={safeResult!.generated_score}
+          scoreDiff={safeResult!.score_diff}
           subDimensionScores={subDimensions}
         />
       </ErrorBoundary>
@@ -121,15 +122,15 @@ export default function ResultsPage() {
       <ErrorBoundary>
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6 md:p-8">
         <BeforeAfterCompare
-          originalUrl={result.original_image_url}
-          generatedUrl={result.generated_image_url}
+          originalUrl={safeResult!.original_image_url}
+          generatedUrl={safeResult!.generated_image_url}
         />
       </div>
       </ErrorBoundary>
 
       {/* 用户需求 */}
       <ErrorBoundary>
-        <UserRequirement requirement={result.user_requirement} />
+        <UserRequirement requirement={safeResult!.user_requirement} />
       </ErrorBoundary>
 
       {/* 分析建议（分类展示） */}
@@ -150,10 +151,10 @@ export default function ResultsPage() {
           {/* 旧版原始列表（备选） */}
           {parsedItems.length === 0 && (
             <div className="grid md:grid-cols-2 gap-4">
-              <AdviceCard title="当前优点" icon="👍" items={result.advice.strengths} color="pink" />
-              <AdviceCard title="可改善方面" icon="🎯" items={result.advice.weaknesses} color="amber" />
-              <AdviceCard title="医学美学建议" icon="💡" items={result.advice.medical_aesthetic_suggestions} color="blue" />
-              <AdviceCard title="风险提示" icon="⚠️" items={result.advice.risk_notes} color="red" />
+              <AdviceCard title="当前优点" icon="👍" items={safeResult!.advice.strengths} color="pink" />
+              <AdviceCard title="可改善方面" icon="🎯" items={safeResult!.advice.weaknesses} color="amber" />
+              <AdviceCard title="医学美学建议" icon="💡" items={safeResult!.advice.medical_aesthetic_suggestions} color="blue" />
+              <AdviceCard title="风险提示" icon="⚠️" items={safeResult!.advice.risk_notes} color="red" />
             </div>
           )}
         </div>
@@ -162,7 +163,7 @@ export default function ResultsPage() {
 
       {/* 总结报告 */}
       <ErrorBoundary>
-        <SummaryReport summary={result.summary} />
+        <SummaryReport summary={safeResult!.summary} />
       </ErrorBoundary>
 
       {/* 操作栏 */}
