@@ -48,9 +48,11 @@ export default function AdviceCard({
           selected={selectedCategory}
           onChange={setSelectedCategory}
         />
-        <div className="space-y-2">
+        <div className="md:columns-2 space-y-3 [column-gap:1.25rem]">
           {filtered.map((item) => (
-            <AdviceItem key={item.id} item={item} />
+            <div key={item.id} className="break-inside-avoid-column">
+              <AdviceItem item={item} />
+            </div>
           ))}
         </div>
       </div>

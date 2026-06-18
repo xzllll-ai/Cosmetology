@@ -113,35 +113,35 @@ export default function ResultsPage() {
         </div>
       </div>
 
-      {/* 评分面板（含子维度 + 前后对比）— 桌面端并排 */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <ErrorBoundary>
-          <ScorePanel
-            originalScore={safeResult!.original_score}
-            generatedScore={safeResult!.generated_score}
-            scoreDiff={safeResult!.score_diff}
-            subDimensionScores={subDimensions}
-          />
-        </ErrorBoundary>
-        <ErrorBoundary>
-          <div className="bg-white dark:bg-gray-800/80 rounded-3xl shadow-xl shadow-pink-500/5 border border-gray-100 dark:border-gray-700 overflow-hidden h-full">
-            <div className="bg-gradient-to-r from-pink-500/5 to-purple-600/5 dark:from-pink-500/10 dark:to-purple-600/10 px-6 md:px-8 py-5 border-b border-gray-50 dark:border-gray-700">
-              <div className="flex items-center justify-center gap-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm">
-                  <span className="text-white text-sm">⟺</span>
-                </div>
-                <h3 className="text-lg font-bold bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 bg-clip-text text-transparent">前后对比</h3>
+      {/* 评分面板 */}
+      <ErrorBoundary>
+        <ScorePanel
+          originalScore={safeResult!.original_score}
+          generatedScore={safeResult!.generated_score}
+          scoreDiff={safeResult!.score_diff}
+          subDimensionScores={subDimensions}
+        />
+      </ErrorBoundary>
+
+      {/* 前后对比 — 撑满 */}
+      <ErrorBoundary>
+        <div className="bg-white dark:bg-gray-800/80 rounded-3xl shadow-xl shadow-pink-500/5 border border-gray-100 dark:border-gray-700 overflow-hidden">
+          <div className="bg-gradient-to-r from-pink-500/5 to-purple-600/5 dark:from-pink-500/10 dark:to-purple-600/10 px-6 md:px-8 py-5 border-b border-gray-50 dark:border-gray-700">
+            <div className="flex items-center justify-center gap-3">
+              <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm">
+                <span className="text-white text-sm">⟺</span>
               </div>
-            </div>
-            <div className="p-6 md:p-8">
-              <BeforeAfterCompare
-                originalUrl={safeResult!.original_image_url}
-                generatedUrl={safeResult!.generated_image_url}
-              />
+              <h3 className="text-lg font-bold bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 bg-clip-text text-transparent">前后对比</h3>
             </div>
           </div>
-        </ErrorBoundary>
-      </div>
+          <div className="p-6 md:p-8">
+            <BeforeAfterCompare
+              originalUrl={safeResult!.original_image_url}
+              generatedUrl={safeResult!.generated_image_url}
+            />
+          </div>
+        </div>
+      </ErrorBoundary>
 
       {/* 用户需求 */}
       <ErrorBoundary>
