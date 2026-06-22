@@ -1,6 +1,6 @@
 "use client";
 
-import type { ScoreResult, SubDimensionScore, ScoreDimension } from "@/types";
+import type { ScoreResult, SubDimensionScore } from "@/types";
 import ScoreDisplay from "@/components/ScoreDisplay";
 import ScoreComparisonBar from "@/components/ScoreComparisonBar";
 import SubDimensionScoreList from "@/components/SubDimensionScoreList";
@@ -19,36 +19,6 @@ export default function ScorePanel({
   subDimensionScores,
 }: Props) {
   const hasComparison = generatedScore !== undefined;
-
-  // 构建用于子维度展示的数据
-  // 优先从后端返回的 real dimensions 取，否则用 subDimensionScores
-  const originalDims: SubDimensionScore[] = (() => {
-    if (originalScore.dimensions?.length) {
-      return originalScore.dimensions.map((d) => ({
-        name: d.name,
-        label: d.name,
-        score: d.score,
-        level: d.level,
-      }));
-    }
-    return subDimensionScores ?? [];
-  })();
-
-  const generatedDims: SubDimensionScore[] | undefined = (() => {
-    if (!generatedScore) return undefined;
-    if (generatedScore.dimensions?.length) {
-      return generatedScore.dimensions.map((d) => ({
-        name: d.name,
-        label: d.name,
-        score: d.score,
-        level: d.level,
-      }));
-    }
-    return subDimensionScores?.map((d) => ({
-      ...d,
-      name: d.name,
-    }));
-  })();
 
   return (
     <div className="bg-white dark:bg-gray-800/80 rounded-3xl shadow-xl shadow-pink-500/5 border border-gray-100 dark:border-gray-700 overflow-hidden">
@@ -83,13 +53,10 @@ export default function ScorePanel({
           </div>
         </div>
 
-        {/* 子维度：原始 + 效果对比 */}
-        {(originalDims.length > 0 || subDimensionScores) && (
+        {/* 子维度 */}
+        {subDimensionScores && subDimensionScores.length > 0 && (
           <div className="mt-6 pt-6 border-t border-gray-100 dark:border-gray-700">
-            <SubDimensionScoreList
-              scores={originalDims.length ? originalDims : (subDimensionScores ?? [])}
-              generatedScores={generatedDims}
-            />
+            <SubDimensionScoreList scores={subDimensionScores} />
           </div>
         )}
       </div>

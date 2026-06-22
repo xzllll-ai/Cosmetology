@@ -12,8 +12,7 @@ import BeforeAfterCompare from "@/components/BeforeAfterCompare";
 import SummaryReport from "@/components/SummaryReport";
 import ActionBar from "@/components/ActionBar";
 import UserRequirement from "@/components/UserRequirement";
-import { parseAdvice, buildSubDimensionScores } from "@/lib/analysisParser";
-import type { SubDimensionScore } from "@/types";
+import { parseAdvice, estimateSubDimensionScores } from "@/lib/analysisParser";
 
 export default function ResultsPage() {
   const params = useParams();
@@ -66,20 +65,9 @@ export default function ResultsPage() {
     () => safeResult ? parseAdvice(safeResult.advice) : { items: [], categories: [], categoryCounts: {} as Record<string, number> },
     [safeResult?.advice]
   );
-
-  // 子维度：优先用后端返回的真实维度，否则回退到估算
   const { dimensions: subDimensions } = useMemo(
-    () => safeResult
-      ? buildSubDimensionScores(
-          safeResult.original_score,
-          safeResult.final_score ?? safeResult.generated_score,
-        )
-      : { dimensions: [] as SubDimensionScore[] },
-    [
-      safeResult?.original_score,
-      safeResult?.final_score,
-      safeResult?.generated_score,
-    ],
+    () => safeResult ? estimateSubDimensionScores(safeResult.original_score, safeResult.advice) : { dimensions: [] },
+    [safeResult?.original_score, safeResult?.advice]
   );
 
   if (error) {
@@ -130,8 +118,8 @@ export default function ResultsPage() {
         <div className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
         <ScorePanel
           originalScore={safeResult!.original_score}
-          generatedScore={safeResult!.final_score ?? safeResult!.generated_score}
-          scoreDiff={safeResult!.score_diff ?? safeResult!.score_comparison?.delta}
+          generatedScore={safeResult!.generated_score}
+          scoreDiff={safeResult!.score_diff}
           subDimensionScores={subDimensions}
         />
         </div>
