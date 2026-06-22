@@ -130,8 +130,8 @@ export default function ResultsPage() {
         <div className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
         <ScorePanel
           originalScore={safeResult!.original_score}
-          generatedScore={safeResult!.generated_score}
-          scoreDiff={safeResult!.score_diff}
+          generatedScore={safeResult!.final_score ?? safeResult!.generated_score}
+          scoreDiff={safeResult!.score_diff ?? safeResult!.score_comparison?.delta}
           subDimensionScores={subDimensions}
         />
         </div>

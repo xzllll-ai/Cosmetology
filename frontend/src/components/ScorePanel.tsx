@@ -57,7 +57,7 @@ export default function ScorePanel({
           <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm">
             <span className="text-white text-sm">📊</span>
           </div>
-          <h3 className="text-lg font-bold bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:-purple-400 bg-clip-text text-transparent">
+          <h3 className="text-lg font-bold bg-gradient-to-r from-pink-600 to-purple-600 dark:from-pink-400 dark:to-purple-400 bg-clip-text text-transparent">
             {hasComparison ? "评分对比" : "美学评分"}
           </h3>
         </div>
