@@ -321,8 +321,8 @@ export function buildSubDimensionScores(
     return { dimensions: result, hasRealScores: true };
   }
 
-  // 回退：旧版后端只返回总分 → 用关键词密度估算（保留旧逻辑）
-  return estimateSubDimensionScores(originalScore, {});
+  // 回退：旧版后端只返回总分 → 用固定偏移估算（保留旧逻辑）
+  return estimateSubDimensionScores(originalScore);
 }
 
 /**
@@ -332,7 +332,7 @@ export function buildSubDimensionScores(
  */
 export function estimateSubDimensionScores(
   originalScore: ScoreResult,
-  _advice: Advice, // unused in new path
+  _advice?: Advice, // unused in new path, optional for backward compat
 ): ParsedSubDimensions {
   const baseScore = originalScore.score;
 
