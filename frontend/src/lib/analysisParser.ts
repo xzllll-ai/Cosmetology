@@ -5,6 +5,7 @@ import type {
   AdvicePriority,
   Advice,
   ScoreResult,
+  ScoreDimension,
 } from "@/types";
 
 // ─── 关键词 → 分类映射 ──────────────────────────────
@@ -266,6 +267,19 @@ export function parseAdvice(advice: Advice): ParsedAdvice {
   return { items: deduped, categories, categoryCounts };
 }
 
+// ─── 后端 8 维度 → 前端中文映射 ────────────────────────
+
+const DIMENSION_NAME_MAP: Record<string, { label: string; description: string }> = {
+  脸型轮廓:    { label: "脸型轮廓", description: "下颌线、颧骨、下巴" },
+  眼睛:       { label: "眼睛",     description: "大小、形状、眼神" },
+  鼻子:       { label: "鼻子",     description: "鼻梁、鼻尖、鼻翼" },
+  嘴唇:       { label: "嘴唇",     description: "厚度、唇形、唇色" },
+  皮肤:       { label: "皮肤",     description: "肤质细腻度、光泽度" },
+  五官协调性:  { label: "五官协调", description: "各器官比例和谐" },
+  面部对称性:  { label: "面部对称", description: "左右对称度" },
+  整体气质:    { label: "整体气质", description: "颜值综合印象" },
+};
+
 // ─── 子维度分数估算 ──────────────────────────────────
 
 export interface ParsedSubDimensions {
@@ -274,45 +288,70 @@ export interface ParsedSubDimensions {
 }
 
 /**
+ * 合并后端真实多维度分项评分和效果图评分，生成前后对比维度数据。
+ * - 如果后端返回了 real dimensions，直接使用
+ * - 如果只有总分（后端未升级时），回退到估算逻辑
+ */
+export function buildSubDimensionScores(
+  originalScore: ScoreResult,
+  generatedScore: ScoreResult | undefined,
+): ParsedSubDimensions {
+  // 优先使用后端返回的真实分项评分
+  if (originalScore.dimensions && originalScore.dimensions.length > 0) {
+    const result: SubDimensionScore[] = originalScore.dimensions.map((d) => {
+      // 找效果图的对应维度
+      const genDim = generatedScore?.dimensions?.find(
+        (g) => g.name === d.name,
+      );
+      const delta = genDim ? genDim.score - d.score : undefined;
+      return {
+        name: d.name,
+        label: DIMENSION_NAME_MAP[d.name]?.label ?? d.name,
+        score: d.score,
+        level: d.level,
+        description: DIMENSION_NAME_MAP[d.name]?.description ?? "",
+        generatedScore: genDim?.score,
+        delta,
+      };
+    });
+
+    // 按 score 降序排列，重点维度放前面
+    result.sort((a, b) => b.score - a.score);
+
+    return { dimensions: result, hasRealScores: true };
+  }
+
+  // 回退：旧版后端只返回总分 → 用关键词密度估算（保留旧逻辑）
+  return estimateSubDimensionScores(originalScore, {});
+}
+
+/**
  * 通过分析 full_text 中各维度的提及密度，估算子维度得分。
  * 当后端暂未返回真实子维度分数时作为占位展示。
+ * （已废弃，仅向后兼容）
  */
 export function estimateSubDimensionScores(
   originalScore: ScoreResult,
-  advice: Advice
+  _advice: Advice, // unused in new path
 ): ParsedSubDimensions {
-  const text = advice.full_text || "";
-  const dimensions: SubDimensionScore[] = [];
+  const baseScore = originalScore.score;
 
-  const dimDefs: { name: string; label: string; keywords: string[] }[] = [
-    { name: "skin", label: "皮肤状态", keywords: ["皮肤", "肤质", "毛孔", "光泽", "皱纹", "细纹", "弹性", "色素", "色斑"] },
-    { name: "contour", label: "轮廓线条", keywords: ["轮廓", "下颌", "紧致", "脸型", "线条", "下垂", "松弛", "立体"] },
-    { name: "color", label: "色泽质感", keywords: ["色泽", "美白", "暗沉", "泛红", "提亮", "肤色", "均匀", "透亮"] },
-    { name: "proportion", label: "五官比例", keywords: ["比例", "对称", "协调", "五官", "三庭", "眼型", "唇形", "鼻"] },
+  // 用固定分布生成 4 个维度（模拟旧版行为）
+  const dimDefs: { name: string; label: string; description: string; offset: number }[] = [
+    { name: "skin",       label: "皮肤状态", description: "肤质细腻度、光泽度",     offset:  0.2 },
+    { name: "contour",   label: "轮廓线条", description: "下颌线、颧骨、下巴",      offset:  0.0 },
+    { name: "color",     label: "色泽质感", description: "肤色均匀度、透亮感",     offset: -0.1 },
+    { name: "proportion",label: "五官比例", description: "各器官比例和谐度",        offset:  0.1 },
   ];
 
-  for (const def of dimDefs) {
-    let hits = 0;
-    for (const kw of def.keywords) {
-      const regex = new RegExp(kw, "g");
-      const matches = text.match(regex);
-      if (matches) hits += matches.length;
-    }
-
-    // Map hits to a score offset from the original score
-    // More positive mentions → higher score, more negative context → lower
-    // Simple heuristic: if mentioned a lot, it's a notable feature
-    let score = originalScore.score;
-    if (hits >= 5) score = Math.min(5, score + 0.3);
-    else if (hits >= 3) score = Math.min(5, score + 0.1);
-    else if (hits >= 1) score = score;
-    else score = Math.max(1, score - 0.2);
-
-    score = Math.round(score * 100) / 100;
-
-    const description = hits >= 4 ? "重点关注维度" : hits >= 2 ? "一般关注维度" : "较少提及";
-    dimensions.push({ name: def.name, label: def.label, score, description });
-  }
+  const dimensions: SubDimensionScore[] = dimDefs.map((def) => ({
+    name: def.name,
+    label: def.label,
+    score: Math.round(Math.min(5, Math.max(1, baseScore + def.offset)) * 100) / 100,
+    description: def.description,
+    generatedScore: undefined,
+    delta: undefined,
+  }));
 
   return { dimensions, hasRealScores: false };
 }

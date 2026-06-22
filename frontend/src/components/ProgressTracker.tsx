@@ -9,15 +9,19 @@ interface Props {
 }
 
 function getStepIndex(progress: string, status: string): number {
-  if (status === "completed") return 3;
-  if (progress.includes("1/3")) return 0;
-  if (progress.includes("2/3")) return 1;
-  if (progress.includes("3/3")) return 2;
-  if (progress.includes("评分") || progress.includes("分析中")) return 0;
-  if (progress.includes("RealVision") || progress.includes("Qwen 分析驱动")) return 1;
-  if (progress.includes("变化总结") || progress.includes("Qwen 生成")) return 2;
-  if (progress.includes("完成")) return 3;
-  return -1;
+  if (status === "completed") return 4; // shows all 4 steps as "done" (last step index = 3, so 4 means all done)
+  if (status === "pending") return -1;
+  // 4-step pipeline
+  if (progress.includes("1/4") || (progress.includes("Step 1") && progress.includes("评分"))) return 0;
+  if (progress.includes("2/4") || (progress.includes("Step 2") && progress.includes("RealVision"))) return 1;
+  if (progress.includes("3/4") || (progress.includes("Step 3") && (progress.includes("对比") || progress.includes("效果图评分")))) return 2;
+  if (progress.includes("4/4") || (progress.includes("Step 4") && progress.includes("总结"))) return 3;
+  // Fallback
+  if (progress.includes("评分") && progress.includes("分析")) return 0;
+  if (progress.includes("生成") && progress.includes("效果图")) return 1;
+  if (progress.includes("对比") || progress.includes("效果图评分")) return 2;
+  if (progress.includes("总结") || progress.includes("变化")) return 3;
+  return 0;
 }
 
 export default function ProgressTracker({ progress, status }: Props) {

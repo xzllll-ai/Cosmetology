@@ -1,13 +1,29 @@
 export interface ScoreResult {
   score: number;
   level: string;
+  /** 多维度分项评分（后端返回） */
+  dimensions?: ScoreDimension[];
+  /** 维度分数的 key-value map（兼容旧版/备用） */
+  dimension_scores?: Record<string, number>;
 }
 
-export interface SubDimensionScore {
+export interface ScoreDimension {
   name: string;
-  label: string;
   score: number;
-  description: string;
+  level: string;
+}
+
+/** 前端用于展示的子维度评分（兼容两种来源） */
+export interface SubDimensionScore {
+  name: string;       // 英文名 or 中文名
+  label: string;      // 中文显示名
+  score: number;
+  level?: string;
+  description?: string;
+  /** 前后对比：效果图分数 */
+  generatedScore?: number;
+  /** 前后对比：变化值 */
+  delta?: number;
 }
 
 export type AdviceCategory = "skin" | "contour" | "color" | "proportion" | "other";
@@ -46,10 +62,22 @@ export interface Advice {
   full_text: string;
 }
 
+/** 评分对比数据 */
+export interface ScoreComparison {
+  before: ScoreResult;
+  after: ScoreResult;
+  delta: number;
+}
+
 export interface AnalysisResult {
   original_score: ScoreResult;
+  /** 效果图评分（后端新版返回） */
+  final_score?: ScoreResult;
+  /** 向后兼容：效果图的原始格式分数 */
   generated_score?: ScoreResult;
   score_diff?: number;
+  /** 完整的评分对比数据（后端直接提供） */
+  score_comparison?: ScoreComparison;
   user_requirement: string;
   advice: Advice;
   summary: string;
