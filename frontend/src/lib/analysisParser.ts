@@ -282,6 +282,10 @@ export function processSubDimensions(rawDims: SubDimensionScore[]): ParsedSubDim
     "比例协调": "五官比例",
   };
 
+  function dimLabel(name: string): string {
+    return dimLabels[name] || name;
+  }
+
   const result: SubDimensionScore[] = rawDims.map((dim) => ({
     name: dim.name,
     label: dimLabel(dim.name),
@@ -292,23 +296,4 @@ export function processSubDimensions(rawDims: SubDimensionScore[]): ParsedSubDim
   }));
 
   return { dimensions: result, hasRealScores: true };
-}
-
-/**
- * 过滤建议条目（按分类和优先级）。
- */
-export function filterAdviceItems(
-  items: CategorizedAdviceItem[],
-  activeCategory: AdviceCategory | "all",
-  priorityFilter: AdvicePriority | "all"
-): CategorizedAdviceItem[] {
-  return items.filter((item) => {
-    if (activeCategory !== "all" && item.category !== activeCategory) return false;
-    if (priorityFilter !== "all" && item.priority !== priorityFilter) return false;
-    return true;
-  });
-}
-
-function dimLabel(name: string): string {
-  return dimLabels[name] || name;
 }
