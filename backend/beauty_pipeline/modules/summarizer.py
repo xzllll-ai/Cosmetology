@@ -43,7 +43,7 @@ class Summarizer:
             advice_summary = "；".join(advice.medical_aesthetic_suggestions)
 
         prompt = build_summary_prompt(
-            score=score.score,
+            score=score.total_score,
             level=score.level,
             user_requirement=user_requirement,
             advice_summary=advice_summary,

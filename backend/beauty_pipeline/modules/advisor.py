@@ -42,7 +42,7 @@ class Advisor:
         score, advice = self.adapter.score_and_analyze(image_path, prompt)
         logger.info(
             "完成，评分 %.2f (%s)，优点 %d 条，不足 %d 条，建议 %d 条",
-            score.score,
+            score.total_score,
             score.level,
             len(advice.strengths),
             len(advice.weaknesses),

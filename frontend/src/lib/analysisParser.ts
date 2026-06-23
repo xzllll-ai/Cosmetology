@@ -11,18 +11,11 @@ import type {
 
 const CATEGORY_KEYWORDS: Record<AdviceCategory, string[]> = {
   skin: ["皮肤", "肤质", "毛孔", "光泽", "色素", "色斑", "屏障", "痘", "皱纹", "细纹", "水光", "嫩肤", "弹性", "松弛"],
-  contour: ["轮廓", "下颌", "紧致", "脸型", "线条", "v脸", "面部轮廓", "提拉", "下垂", "松弛", "射频", "超声", "热玛吉"],
+  contour: ["轮廓", "下颌", "紧致", "脸型", "线条", "v脸", "面部轮廓", "提拉", "下垂", "射频", "超声", "热玛吉"],
   color: ["色泽", "美白", "暗沉", "泛红", "提亮", "肤色", "色素沉着", "均匀", "红斑", "黄气", "透亮"],
   proportion: ["比例", "对称", "协调", "五官", "三庭", "五眼", "眉眼间距", "鼻梁", "唇形", "眼型"],
+  harmony: [],
   other: [],
-};
-
-const CATEGORY_WEIGHTS: Record<AdviceCategory, number> = {
-  skin: 4,
-  contour: 3,
-  color: 2,
-  proportion: 1,
-  other: 0,
 };
 
 // ─── 优先级关键词 ────────────────────────────────────
@@ -42,7 +35,7 @@ function detectCategory(text: string): AdviceCategory {
   let best: AdviceCategory = "other";
   let bestWeight = -1;
   for (const [cat, kws] of Object.entries(CATEGORY_KEYWORDS) as [AdviceCategory, string[]][]) {
-    if (cat === "other") continue;
+    if (cat === "harmony" || cat === "other") continue;
     const weight = kws.reduce((w, kw) => w + (text.includes(kw) ? 1 : 0), 0);
     if (weight > bestWeight) {
       bestWeight = weight;
@@ -260,13 +253,13 @@ export function parseAdvice(advice: Advice): ParsedAdvice {
       categories.push(item.category);
     }
   }
-  const categoryCounts = {} as Record<AdviceCategory, number>;
+  const categoryCounts: Record<AdviceCategory, number> = {};
   for (const c of categories) categoryCounts[c] = deduped.filter((i) => i.category === c).length;
 
   return { items: deduped, categories, categoryCounts };
 }
 
-// ─── 子维度分数估算 ──────────────────────────────────
+// ─── 子维度分数处理 ──────────────────────────────────
 
 export interface ParsedSubDimensions {
   dimensions: SubDimensionScore[];
@@ -274,59 +267,34 @@ export interface ParsedSubDimensions {
 }
 
 /**
- * 通过分析 full_text 中各维度的提及密度，估算子维度得分。
- * 当后端暂未返回真实子维度分数时作为占位展示。
+ * 将后端返回的子维度数据转换为前端显示格式。
+ * 后端返回 raw score，这里做加权平均得到 total_score。
  */
-export function estimateSubDimensionScores(
-  originalScore: ScoreResult,
-  advice: Advice
-): ParsedSubDimensions {
-  const text = advice.full_text || "";
-  const dimensions: SubDimensionScore[] = [];
-
-  const dimDefs: { name: string; label: string; keywords: string[] }[] = [
-    { name: "skin", label: "皮肤状态", keywords: ["皮肤", "肤质", "毛孔", "光泽", "皱纹", "细纹", "弹性", "色素", "色斑"] },
-    { name: "contour", label: "轮廓线条", keywords: ["轮廓", "下颌", "紧致", "脸型", "线条", "下垂", "松弛", "立体"] },
-    { name: "color", label: "色泽质感", keywords: ["色泽", "美白", "暗沉", "泛红", "提亮", "肤色", "均匀", "透亮"] },
-    { name: "proportion", label: "五官比例", keywords: ["比例", "对称", "协调", "五官", "三庭", "眼型", "唇形", "鼻"] },
-  ];
-
-  for (const def of dimDefs) {
-    let hits = 0;
-    for (const kw of def.keywords) {
-      const regex = new RegExp(kw, "g");
-      const matches = text.match(regex);
-      if (matches) hits += matches.length;
-    }
-
-    // Map hits to a score offset from the original score
-    // More positive mentions → higher score, more negative context → lower
-    // Simple heuristic: if mentioned a lot, it's a notable feature
-    let score = originalScore.score;
-    if (hits >= 5) score = Math.min(5, score + 0.3);
-    else if (hits >= 3) score = Math.min(5, score + 0.1);
-    else if (hits >= 1) score = score;
-    else score = Math.max(1, score - 0.2);
-
-    score = Math.round(score * 100) / 100;
-
-    const description = hits >= 4 ? "重点关注维度" : hits >= 2 ? "一般关注维度" : "较少提及";
-    dimensions.push({ name: def.name, label: def.label, score, description });
+export function processSubDimensions(rawDims: SubDimensionScore[]): ParsedSubDimensions {
+  if (!rawDims || rawDims.length === 0) {
+    return { dimensions: [], hasRealScores: false };
   }
 
-  return { dimensions, hasRealScores: false };
+  const dimLabels: Record<string, string> = {
+    "皮肤状态": "皮肤状态",
+    "轮廓线条": "轮廓线条",
+    "五官精致度": "五官精致度",
+    "色泽质感": "色泽质感",
+    "比例协调": "五官比例",
+  };
+
+  const result: SubDimensionScore[] = rawDims.map((dim) => ({
+    name: dim.name,
+    label: dimLabel(dim.name),
+    score: dim.score,
+    max_score: dim.max_score,
+    weight: dim.weight,
+    description: dim.description,
+  }));
+
+  return { dimensions: result, hasRealScores: true };
 }
 
-// ─── 建议过滤 ────────────────────────────────────────
-
-export function filterAdviceItems(
-  items: CategorizedAdviceItem[],
-  activeCategory: AdviceCategory | "all",
-  priorityFilter: AdvicePriority | "all"
-): CategorizedAdviceItem[] {
-  return items.filter((item) => {
-    if (activeCategory !== "all" && item.category !== activeCategory) return false;
-    if (priorityFilter !== "all" && item.priority !== priorityFilter) return false;
-    return true;
-  });
+function dimLabel(name: string): string {
+  return dimLabels[name] || name;
 }

@@ -18,10 +18,10 @@ function getScoreColor(score: number): string {
 
 export default function ScoreComparisonBar({ originalScore, generatedScore, scoreDiff }: Props) {
   const hasComparison = generatedScore !== undefined;
-  const originalPct = (originalScore.score / 5) * 100;
-  const generatedPct = hasComparison ? (generatedScore!.score / 5) * 100 : 0;
-  const origColor = getScoreColor(originalScore.score);
-  const genColor = hasComparison ? getScoreColor(generatedScore!.score) : origColor;
+  const originalPct = (originalScore.total_score / 5) * 100;
+  const generatedPct = hasComparison ? (generatedScore!.total_score / 5) * 100 : 0;
+  const origColor = getScoreColor(originalScore.total_score);
+  const genColor = hasComparison ? getScoreColor(generatedScore!.total_score) : origColor;
 
   return (
     <div className="space-y-4">
@@ -32,7 +32,7 @@ export default function ScoreComparisonBar({ originalScore, generatedScore, scor
             原始照片
           </span>
           <span className="font-bold tabular-nums" style={{ color: origColor }}>
-            {originalScore.score.toFixed(2)}
+            {originalScore.total_score.toFixed(2)}
           </span>
         </div>
         <div className="w-full h-3.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
@@ -52,7 +52,7 @@ export default function ScoreComparisonBar({ originalScore, generatedScore, scor
               AI 效果图
             </span>
             <span className="font-bold tabular-nums" style={{ color: genColor }}>
-              {generatedScore!.score.toFixed(2)}
+              {generatedScore!.total_score.toFixed(2)}
             </span>
           </div>
           <div className="w-full h-3.5 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden shadow-inner">
@@ -65,22 +65,15 @@ export default function ScoreComparisonBar({ originalScore, generatedScore, scor
             <span className="text-xs text-gray-400 dark:text-gray-500">{generatedScore!.level}</span>
             {scoreDiff !== undefined && (
               <span
-                className={`inline-flex items-center gap-0.5 text-xs font-bold px-2.5 py-1 rounded-full ${
-                  scoreDiff > 0
-                    ? "text-green-700 bg-green-50 dark:bg-green-900/30 dark:text-green-400 ring-1 ring-green-200 dark:ring-green-700"
-                    : scoreDiff < 0
-                    ? "text-red-700 bg-red-50 dark:bg-red-900/30 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-700"
-                    : "text-gray-500 bg-gray-50 dark:bg-gray-800 ring-1 ring-gray-200"
-                }`}
+                className={`inline-flex items-center gap-0.5 text-xs font-bold px-2.5 py-1 rounded-full ${\n                  scoreDiff > 0\n                    ? "text-green-700 bg-green-50 dark:bg-green-900/30 dark:text-green-400 ring-1 ring-green-200 dark:ring-green-700"\n                    : scoreDiff < 0\n                    ? "text-red-700 bg-red-50 dark:bg-red-900/30 dark:text-red-400 ring-1 ring-red-200 dark:ring-red-700"\n                    : "text-gray-500 bg-gray-50 dark:bg-gray-800 ring-1 ring-gray-200"\n                }`}
               >
                 {scoreDiff > 0 ? "↑" : scoreDiff < 0 ? "↓" : "→"}
-                {" "}
-                {scoreDiff > 0 ? "+" : ""}{scoreDiff.toFixed(2)}
+                {" "}\n                {scoreDiff > 0 ? "+" : ""}{scoreDiff.toFixed(2)}
               </span>
             )}
           </div>
         </div>
-      )}
+      )
     </div>
   );
 }

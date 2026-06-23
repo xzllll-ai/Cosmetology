@@ -169,8 +169,8 @@ class QwenAdapter:
         logger.info("调用 Qwen 进行评分+医学美学分析...")
         full_text = self.chat_with_image(image_path, prompt)
 
-        # 从文本中提取评分
-        score = self._extract_score(full_text)
+        # 从文本中提取评分（多维度）
+        score = self._extract_score_multidim(full_text)
 
         # 解析结构化建议
         advice = BeautyAdvice(full_text=full_text)
@@ -187,25 +187,49 @@ class QwenAdapter:
 
         return score, advice
 
-    def _extract_score(self, text: str) -> BeautyScore:
-        """从 Qwen 输出文本中解析评分和等级"""
-        score_val = 3.0  # 默认中等
-        level = "中等"
+    def _extract_score_multidim(self, text: str) -> BeautyScore:
+        """
+        从 Qwen 多维度评分输出中解析总分和子维度分数。
 
-        for line in text.strip().split("\n"):
-            stripped = line.strip().lower()
-            # 匹配 "评分: X.XX / 5.00"
-            if "评分" in stripped and "/" in stripped:
-                import re
+        期望格式：
+        总分: 4.16 / 5.00
+        等级: 较高
+        子维度评分：
+        皮肤状态: 4.5 / 5.0（权重25%）毛孔较细腻
+        轮廓线条: 4.0 / 5.0（权重25%）下颌线清晰
+        ...
+        """
+        import re
+
+        total_score = 3.0
+        level = "中等"
+        sub_dimensions = []
+
+        lines = text.strip().split("\n")
+        in_sub_dim = False
+
+        # 子维度定义（名称 -> 权重）
+        DIM_DEFS = {
+            "皮肤状态": 0.25,
+            "轮廓线条": 0.25,
+            "五官精致度": 0.25,
+            "色泽质感": 0.15,
+            "比例协调": 0.10,
+        }
+
+        for line in lines:
+            stripped = line.strip()
+
+            # 解析总分
+            if "总分" in stripped and "/" in stripped:
                 match = re.search(r'([\d.]+)\s*/\s*5', stripped)
                 if match:
                     try:
-                        score_val = float(match.group(1))
-                        score_val = max(1.0, min(5.0, score_val))
+                        total_score = max(1.0, min(5.0, float(match.group(1))))
                     except ValueError:
                         pass
 
-            # 匹配等级
+            # 解析等级
             if "等级" in stripped and ":" in stripped:
                 level_text = stripped.split(":", 1)[1].strip()
                 valid_levels = ["很高", "较高", "中等", "一般", "偏低"]
@@ -214,18 +238,79 @@ class QwenAdapter:
                         level = vl
                         break
 
+            # 进入子维度区域
+            if "子维度评分" in stripped or "子维度" in stripped:
+                in_sub_dim = True
+                continue
+
+            # 解析子维度分数
+            if in_sub_dim:
+                # 检测新章节（退出子维度区域）
+                if stripped.startswith("###") or stripped.startswith("##"):
+                    in_sub_dim = False
+                    continue
+
+                for dim_name, weight in DIM_DEFS.items():
+                    if stripped.startswith(dim_name) or f"{dim_name}:" in stripped:
+                        # 提取分数
+                        score_match = re.search(r'([\d.]+)\s*/\s*5', stripped)
+                        if score_match:
+                            try:
+                                dim_score = max(1.0, min(5.0, float(score_match.group(1))))
+                            except ValueError:
+                                dim_score = 3.0
+                        else:
+                            dim_score = 3.0
+
+                        # 提取说明（括号内或冒号后）
+                        desc_match = re.search(r'[（(]([^）)]+)[）)]', stripped)
+                        description = desc_match.group(1).strip() if desc_match else ""
+
+                        from beauty_pipeline.schemas import SubDimensionScore
+                        sub_dimensions.append(SubDimensionScore(
+                            name=dim_name,
+                            score=round(dim_score, 1),
+                            max_score=5.0,
+                            weight=weight,
+                            description=description,
+                        ))
+                        break
+
         # 如果没解析到等级，根据分数推断
         if level == "中等":
             level = (
-                "很高" if score_val >= 4.0
-                else "较高" if score_val >= 3.5
-                else "中等" if score_val >= 3.0
-                else "一般" if score_val >= 2.5
+                "很高" if total_score >= 4.0
+                else "较高" if total_score >= 3.5
+                else "中等" if total_score >= 3.0
+                else "一般" if total_score >= 2.5
                 else "偏低"
             )
 
-        logger.info("Qwen 评分: %.2f (%s)", score_val, level)
-        return BeautyScore(score=round(score_val, 2), level=level)
+        # 如果子维度为空，用默认值填充
+        if not sub_dimensions:
+            for dim_name, weight in DIM_DEFS.items():
+                from beauty_pipeline.schemas import SubDimensionScore
+                sub_dimensions.append(SubDimensionScore(
+                    name=dim_name,
+                    score=round(total_score, 1),
+                    max_score=5.0,
+                    weight=weight,
+                    description="",
+                ))
+
+        logger.info("Qwen 多维度评分: %.2f (%s), 子维度 %d 个",
+                     total_score, level, len(sub_dimensions))
+        return BeautyScore(
+            total_score=round(total_score, 2),
+            level=level,
+            sub_dimensions=sub_dimensions,
+        )
+
+    def _extract_score(self, text: str) -> BeautyScore:
+        """从 Qwen 输出文本中解析评分和等级（兼容旧格式，内部转为多维度）"""
+        score = self._extract_score_multidim(text)
+        logger.info("Qwen 评分: %.2f (%s)", score.total_score, score.level)
+        return score
 
     def summarize(self, prompt: str) -> str:
         """

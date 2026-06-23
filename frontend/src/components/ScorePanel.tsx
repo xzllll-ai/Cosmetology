@@ -23,7 +23,7 @@ export default function ScorePanel({
   return (
     <div className="bg-white dark:bg-gray-800/80 rounded-3xl shadow-xl shadow-pink-500/5 border border-gray-100 dark:border-gray-700 overflow-hidden">
       <div className="bg-gradient-to-r from-pink-500/5 to-purple-600/5 dark:from-pink-500/10 dark:to-purple-600/10 px-6 md:px-8 py-5 border-b border-gray-50 dark:border-gray-700">
-        <div className="flex items-center justify-center gap-3">
+        <div className="flex items-center gap-3">
           <div className="w-8 h-8 bg-gradient-to-br from-pink-500 to-purple-600 rounded-xl flex items-center justify-center shadow-sm">
             <span className="text-white text-sm">📊</span>
           </div>

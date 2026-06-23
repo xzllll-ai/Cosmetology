@@ -37,6 +37,9 @@ echo ""
 
 cd "$API_DIR"
 
+export PYTHONPATH="$API_DIR"
+export PYTHONUNBUFFERED=1
+
 # 捕获 Ctrl+C，同时停掉隧道
 trap "echo ''; echo '🛑 正在停止...'; kill $TUNNEL_PID 2>/dev/null; echo '✅ 已停止'; exit 0" INT TERM
 

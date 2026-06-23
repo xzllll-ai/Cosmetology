@@ -1,5 +1,5 @@
 export interface ScoreResult {
-  score: number;
+  total_score: number;
   level: string;
 }
 
@@ -7,10 +7,12 @@ export interface SubDimensionScore {
   name: string;
   label: string;
   score: number;
+  max_score: number;
+  weight: number;
   description: string;
 }
 
-export type AdviceCategory = "skin" | "contour" | "color" | "proportion" | "other";
+export type AdviceCategory = "skin" | "contour" | "color" | "proportion" | "harmony" | "other";
 
 export interface CategoryInfo {
   key: AdviceCategory;
@@ -25,6 +27,7 @@ export const ADVICE_CATEGORIES: Record<AdviceCategory, CategoryInfo> = {
   contour: { key: "contour", label: "轮廓线条", icon: "✏️", color: "text-violet-600 bg-violet-50", bgColor: "bg-violet-50 border-violet-200" },
   color: { key: "color", label: "色泽质感", icon: "🎨", color: "text-amber-600 bg-amber-50", bgColor: "bg-amber-50 border-amber-200" },
   proportion: { key: "proportion", label: "五官比例", icon: "📐", color: "text-sky-600 bg-sky-50", bgColor: "bg-sky-50 border-sky-200" },
+  harmony: { key: "harmony", label: "整体协调", icon: "✨", color: "text-purple-600 bg-purple-50", bgColor: "bg-purple-50 border-purple-200" },
   other: { key: "other", label: "综合建议", icon: "💡", color: "text-gray-600 bg-gray-50", bgColor: "bg-gray-50 border-gray-200" },
 };
 

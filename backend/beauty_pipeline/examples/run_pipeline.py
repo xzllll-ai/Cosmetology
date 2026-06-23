@@ -43,18 +43,6 @@ def main():
         "--output_dir", type=str, default="outputs",
         help="输出目录（默认: outputs）"
     )
-    # SCUT
-    parser.add_argument(
-        "--scut_model_path", type=str,
-        default="/apps/users/xzl/aesthetic/scut/SCUT-Training/"
-                "SCUT-FBP5500-Database-Release/trained_models_for_pytorch/"
-                "checkpoints/resnet18_best.pth",
-        help="SCUT 模型权重路径"
-    )
-    parser.add_argument(
-        "--scut_device", type=str, default="cuda:0",
-        help="SCUT 评分模型使用的设备（默认: cuda:0）"
-    )
     # Qwen
     parser.add_argument(
         "--qwen_model_path", type=str,
@@ -62,8 +50,8 @@ def main():
         help="Qwen3-VL 模型路径"
     )
     parser.add_argument(
-        "--qwen_device", type=str, default="cuda:5",
-        help="Qwen 模型使用的设备（默认: cuda:5）"
+        "--qwen_device", type=str, default="cuda:6",
+        help="Qwen 模型使用的设备（默认: cuda:6）"
     )
     # RealVision
     parser.add_argument(
@@ -72,8 +60,8 @@ def main():
         help="RealVisXL 模型路径"
     )
     parser.add_argument(
-        "--realvision_device", type=str, default="cuda:5",
-        help="RealVision 模型使用的设备（默认: cuda:5）"
+        "--realvision_device", type=str, default="cuda:6",
+        help="RealVision 模型使用的设备（默认: cuda:6）"
     )
     parser.add_argument(
         "--strength", type=float, default=0.35,
@@ -93,8 +81,6 @@ def main():
 
     # 构建配置
     config = BeautyPipelineConfig(
-        scut_model_path=args.scut_model_path,
-        scut_device=args.scut_device,
         qwen_model_path=args.qwen_model_path,
         qwen_device=args.qwen_device,
         realvision_model_path=args.realvision_model_path,
@@ -116,10 +102,10 @@ def main():
     print("=" * 60)
     print("📊 结果摘要")
     print("=" * 60)
-    print(f"原始评分: {result.original_score.score:.4f} ({result.original_score.level})")
-    print(f"生成后评分: {result.generated_score.score:.4f} ({result.generated_score.level})")
-    score_diff = result.generated_score.score - result.original_score.score
-    print(f"分数变化: {score_diff:+.4f}")
+    print(f"原始评分: {result.original_score.total_score:.4f} ({result.original_score.level})")
+    if result.generated_score:
+        print(f"生成后评分: {result.generated_score.total_score:.4f} ({result.generated_score.level})")
+        print(f"分数变化: {result.score_diff:+.4f}")
     print(f"效果图: {result.generated_image_path}")
     print(f"完整报告: {os.path.join(args.output_dir, 'report.md')}")
     print(f"结构化结果: {os.path.join(args.output_dir, 'result.json')}")

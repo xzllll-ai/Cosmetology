@@ -12,7 +12,7 @@ import BeforeAfterCompare from "@/components/BeforeAfterCompare";
 import SummaryReport from "@/components/SummaryReport";
 import ActionBar from "@/components/ActionBar";
 import UserRequirement from "@/components/UserRequirement";
-import { parseAdvice, estimateSubDimensionScores } from "@/lib/analysisParser";
+import { parseAdvice, processSubDimensions } from "@/lib/analysisParser";
 
 export default function ResultsPage() {
   const params = useParams();
@@ -66,8 +66,12 @@ export default function ResultsPage() {
     [safeResult?.advice]
   );
   const { dimensions: subDimensions } = useMemo(
-    () => safeResult ? estimateSubDimensionScores(safeResult.original_score, safeResult.advice) : { dimensions: [] },
-    [safeResult?.original_score, safeResult?.advice]
+    () => {
+      if (!safeResult) return { dimensions: [] };
+      const origDims = safeResult.original_score.sub_dimensions || [];
+      return processSubDimensions(origDims);
+    },
+    [safeResult?.original_score]
   );
 
   if (error) {
@@ -100,6 +104,11 @@ export default function ResultsPage() {
   // 完成状态 — safeResult 已在上面声明，这里保证非空
 
 
+  // Defensive: ensure score fields exist (backend may return stale cached data)
+  const originalScore = safeResult!.original_score || { total_score: 0, level: "中等", sub_dimensions: [] };
+  const generatedScore = safeResult!.generated_score;
+  const scoreDiff = safeResult!.score_diff;
+
   return (
     <div className="space-y-6 animate-fade-in" role="main" aria-label="分析结果">
       {/* 完成提示 — 紧凑 */}
@@ -108,7 +117,7 @@ export default function ResultsPage() {
           <span className="text-2xl">🎉</span>
           <div className="text-left">
             <h2 className="font-bold text-green-800 dark:text-green-300">分析完成</h2>
-            <p className="text-xs text-green-600 dark:text-green-400">原始评分 {safeResult!.original_score.score.toFixed(2)} · {safeResult!.original_score.level}</p>
+            <p className="text-xs text-green-600 dark:text-green-400">原始评分 {(originalScore.total_score ?? 0).toFixed(2)} · {originalScore.level}</p>
           </div>
         </div>
       </div>
@@ -117,9 +126,9 @@ export default function ResultsPage() {
       <ErrorBoundary>
         <div className="animate-slide-up" style={{ animationDelay: "0.1s" }}>
         <ScorePanel
-          originalScore={safeResult!.original_score}
-          generatedScore={safeResult!.generated_score}
-          scoreDiff={safeResult!.score_diff}
+          originalScore={originalScore}
+          generatedScore={generatedScore}
+          scoreDiff={scoreDiff}
           subDimensionScores={subDimensions}
         />
         </div>

@@ -67,32 +67,49 @@ def get_pipeline() -> BeautyPipeline:
 
 def _serialize_result(result, task_id: str) -> dict:
     """将 BeautyPipelineResult 序列化为 JSON 字典"""
-    data = {
+    result_dict = {
         "original_score": {
-            "score": result.original_score.score,
-            "level": result.original_score.level,
+            "total_score": result.original_score.total_score if result.original_score else 0,
+            "level": result.original_score.level if result.original_score else "中等",
+            "sub_dimensions": [
+                {
+                    "name": sd.name,
+                    "score": sd.score,
+                    "max_score": sd.max_score,
+                    "description": sd.description,
+                    "evidence": sd.evidence,
+                }
+                for sd in (result.original_score.sub_dimensions if result.original_score else [])
+            ],
         },
+        "generated_score": {
+            "total_score": result.generated_score.total_score if result.generated_score else 0,
+            "level": result.generated_score.level if result.generated_score else "中等",
+            "sub_dimensions": [
+                {
+                    "name": sd.name,
+                    "score": sd.score,
+                    "max_score": sd.max_score,
+                    "description": sd.description,
+                    "evidence": sd.evidence,
+                }
+                for sd in (result.generated_score.sub_dimensions if result.generated_score else [])
+            ],
+        },
+        "score_diff": result.score_diff,
         "user_requirement": result.user_requirement,
         "advice": {
-            "strengths": result.advice.strengths,
-            "weaknesses": result.advice.weaknesses,
-            "medical_aesthetic_suggestions": result.advice.medical_aesthetic_suggestions,
-            "risk_notes": result.advice.risk_notes,
-            "full_text": result.advice.full_text,
+            "strengths": result.advice.strengths if result.advice else [],
+            "weaknesses": result.advice.weaknesses if result.advice else [],
+            "medical_aesthetic_suggestions": result.advice.medical_aesthetic_suggestions if result.advice else [],
+            "risk_notes": result.advice.risk_notes if result.advice else [],
+            "full_text": result.advice.full_text if result.advice else "",
         },
         "summary": result.summary,
         "original_image_url": f"/static/{task_id}/original.png",
         "generated_image_url": f"/static/{task_id}/generated.png",
     }
-    if result.generated_score:
-        data["generated_score"] = {
-            "score": result.generated_score.score,
-            "level": result.generated_score.level,
-        }
-        data["score_diff"] = round(
-            result.generated_score.score - result.original_score.score, 3
-        )
-    return data
+    return result_dict
 
 
 def _run_pipeline_task(
@@ -162,7 +179,7 @@ def _run_pipeline_task(
 @app.get("/health")
 async def health():
     """健康检查"""
-    data = {"status": "ok"}
+    return {"status": "ok"}
 
 
 @app.post("/api/analyze")
@@ -227,7 +244,7 @@ async def get_task(task_id: str):
         )
 
     task = tasks[task_id]
-    data = {
+    return {
         "task_id": task["task_id"],
         "status": task["status"],
         "progress": task["progress"],
@@ -251,7 +268,7 @@ async def get_report(task_id: str):
     with open(report_path, "r", encoding="utf-8") as f:
         report = f.read()
 
-    data = {"report": report}
+    return {"report": report}
 
 
 @app.get("/api/tasks")

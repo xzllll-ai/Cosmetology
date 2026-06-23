@@ -25,15 +25,17 @@ function getLevelColor(level: string): string {
 }
 
 export default function ScoreDisplay({ label, score, color }: Props) {
-  const strokeColor = color || getScoreColor(score.score);
-  const percentage = (score.score / 5) * 100;
+  // Defensive: handle missing total_score (e.g. stale cached API response)
+  const rawScore = score.total_score ?? 0;
+  const strokeColor = color || getScoreColor(rawScore);
+  const percentage = (rawScore / 5) * 100;
   const circumference = 2 * Math.PI * 45;
   const offset = circumference - (percentage / 100) * circumference;
 
   return (
     <div
       className="flex flex-col items-center gap-3"
-      aria-label={`${label}: ${score.score.toFixed(2)} out of 5, level ${score.level}`}
+      aria-label={`${label}: ${rawScore.toFixed(2)} out of 5, level ${score.level}`}
     >
       <div className="relative w-24 h-24 md:w-32 md:h-32">
         {/* Glow effect */}
@@ -66,7 +68,7 @@ export default function ScoreDisplay({ label, score, color }: Props) {
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <span className="text-lg md:text-2xl font-bold tracking-tight" style={{ color: strokeColor }}>
-            {score.score.toFixed(2)}
+            {rawScore.toFixed(2)}
           </span>
           <span className="text-[10px] md:text-xs text-gray-400 dark:text-gray-500 font-medium">/ 5.00</span>
         </div>

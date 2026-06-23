@@ -1,6 +1,6 @@
 "use client";
 
-import type { SubDimensionScore } from "@/types";
+import type { ScoreResult, SubDimensionScore } from "@/types";
 
 interface Props {
   scores: SubDimensionScore[];
@@ -19,11 +19,11 @@ export default function SubDimensionScoreList({ scores }: Props) {
 
   return (
     <div className="space-y-3">
-      <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400">子维度评分估算</h4>
+      <h4 className="text-sm font-semibold text-gray-600 dark:text-gray-400">多维度评分</h4>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         {scores.map((dim) => {
           const color = getColor(dim.score);
-          const pct = (dim.score / 5) * 100;
+          const pct = (dim.score / dim.max_score) * 100;
           const circumference = 2 * Math.PI * 28;
           const offset = circumference - (pct / 100) * circumference;
 
@@ -48,8 +48,10 @@ export default function SubDimensionScoreList({ scores }: Props) {
                   </span>
                 </div>
               </div>
-              <span className="text-xs text-gray-500 dark:text-gray-400 text-center">{dim.label}</span>
-              <span className="text-[10px] text-gray-400 dark:text-gray-500">{dim.description}</span>
+              <span className="text-xs text-gray-500 dark:text-gray-400 text-center">{dim.label || dim.name}</span>
+              {dim.description && (
+                <span className="text-[10px] text-gray-400 dark:text-gray-500 text-center">{dim.description}</span>
+              )}
             </div>
           );
         })}
