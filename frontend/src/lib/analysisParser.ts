@@ -297,3 +297,18 @@ export function processSubDimensions(rawDims: SubDimensionScore[]): ParsedSubDim
 
   return { dimensions: result, hasRealScores: true };
 }
+
+/**
+ * 过滤建议条目（按分类和优先级）。
+ */
+export function filterAdviceItems(
+  items: CategorizedAdviceItem[],
+  activeCategory: AdviceCategory | "all",
+  priorityFilter: AdvicePriority | "all"
+): CategorizedAdviceItem[] {
+  return items.filter((item) => {
+    if (activeCategory !== "all" && item.category !== activeCategory) return false;
+    if (priorityFilter !== "all" && item.priority !== priorityFilter) return false;
+    return true;
+  });
+}
