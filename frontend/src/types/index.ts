@@ -1,6 +1,7 @@
 export interface ScoreResult {
   total_score: number;
   level: string;
+  sub_dimensions?: SubDimensionScore[];
 }
 
 export interface SubDimensionScore {

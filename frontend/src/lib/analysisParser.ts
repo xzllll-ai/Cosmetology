@@ -268,7 +268,6 @@ export interface ParsedSubDimensions {
 
 /**
  * 将后端返回的子维度数据转换为前端显示格式。
- * 后端返回 raw score，这里做加权平均得到 total_score。
  */
 export function processSubDimensions(rawDims: SubDimensionScore[]): ParsedSubDimensions {
   if (!rawDims || rawDims.length === 0) {
@@ -293,6 +292,21 @@ export function processSubDimensions(rawDims: SubDimensionScore[]): ParsedSubDim
   }));
 
   return { dimensions: result, hasRealScores: true };
+}
+
+/**
+ * 过滤建议条目（按分类和优先级）。
+ */
+export function filterAdviceItems(
+  items: CategorizedAdviceItem[],
+  activeCategory: AdviceCategory | "all",
+  priorityFilter: AdvicePriority | "all"
+): CategorizedAdviceItem[] {
+  return items.filter((item) => {
+    if (activeCategory !== "all" && item.category !== activeCategory) return false;
+    if (priorityFilter !== "all" && item.priority !== priorityFilter) return false;
+    return true;
+  });
 }
 
 function dimLabel(name: string): string {
