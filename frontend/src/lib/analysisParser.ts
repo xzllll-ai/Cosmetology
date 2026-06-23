@@ -253,7 +253,7 @@ export function parseAdvice(advice: Advice): ParsedAdvice {
       categories.push(item.category);
     }
   }
-  const categoryCounts: Record<AdviceCategory, number> = {};
+  const categoryCounts: Record<AdviceCategory, number> = {} as Record<AdviceCategory, number>;
   for (const c of categories) categoryCounts[c] = deduped.filter((i) => i.category === c).length;
 
   return { items: deduped, categories, categoryCounts };
